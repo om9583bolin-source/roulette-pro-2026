@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Roulette SVG Pro</title>
+    <title>Roulette SVG Pro with Ball</title>
     <style>
         body { 
             background-color: #0f0f0f; 
@@ -14,7 +14,6 @@
         }
         .container { max-width: 450px; margin: auto; padding-bottom: 50px; }
         
-        /* WHEEL STYLES */
         .wheel-wrapper {
             width: 300px; height: 300px;
             margin: 20px auto;
@@ -22,13 +21,25 @@
             border-radius: 50%;
             border: 8px solid #2c3e50;
             box-shadow: 0 0 25px rgba(0,0,0,0.8);
-            overflow: hidden;
+            background: #2c3e50;
         }
         
-        /* The SVG Wheel Element */
         #svg-wheel {
             width: 100%; height: 100%;
             transition: transform 4s cubic-bezier(0.1, 0, 0.1, 1);
+        }
+
+        /* BALL STYLING */
+        #ball {
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 12px; height: 12px;
+            background: radial-gradient(circle, #fff 30%, #bbb 100%);
+            border-radius: 50%;
+            z-index: 15;
+            display: none;
+            box-shadow: 0 0 8px rgba(255,255,255,0.6);
+            transform-origin: center;
         }
 
         .pointer {
@@ -50,10 +61,8 @@
             border: 4px solid #fff;
             box-shadow: 0 0 10px black;
             z-index: 5;
-            display: flex; align-items: center; justify-content: center;
         }
 
-        /* DASHBOARD */
         .result-display {
             font-size: 50px; font-weight: 800; margin: 15px 0;
             display: inline-block; padding: 5px 40px;
@@ -72,9 +81,8 @@
             box-shadow: 0 5px 15px rgba(39, 174, 96, 0.4);
             transition: transform 0.1s; width: 80%;
         }
-        button.spin-btn:active { transform: scale(0.96); }
+        button.spin-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        /* STATS */
         .stats-box { background: #1e1e1e; padding: 15px; border-radius: 12px; margin-top: 25px; text-align: left; border: 1px solid #333; }
         .stats-header { color: #f1c40f; font-size: 14px; text-transform: uppercase; border-bottom: 1px solid #444; padding-bottom: 5px; margin-bottom: 10px; }
         
@@ -88,15 +96,14 @@
         .g-item { background: #252525; padding: 10px; border-radius: 8px; }
         .g-val { font-size: 20px; font-weight: bold; display: block; }
         .g-lbl { font-size: 10px; color: #777; }
-
     </style>
 </head>
 <body>
 
 <div class="container">
-    
     <div class="wheel-wrapper">
         <div class="pointer"></div>
+        <div id="ball"></div>
         <div class="center-knob"></div>
         <svg id="svg-wheel" viewBox="0 0 500 500"></svg>
     </div>
@@ -111,109 +118,81 @@
             <div class="g-item"><span id="black-pct" class="g-val" style="color:#95a5a6">0%</span><span class="g-lbl">BLACK</span></div>
             <div class="g-item"><span id="total-spins" class="g-val">0</span><span class="g-lbl">TOTAL</span></div>
         </div>
-
-        <div class="stats-header">🔥 HOT NUMBERS</div>
-        <div id="hot-div" class="ball-list"><span style="color:#555; font-size:12px;">Spin to start...</span></div>
-
-        <div class="stats-header" style="margin-top:20px;">❄️ COLD NUMBERS</div>
-        <div id="cold-div" class="ball-list"></div>
-
-        <div class="stats-header" style="margin-top:20px;">🕒 HISTORY</div>
+        <div class="stats-header">🕒 HISTORY</div>
         <div id="history-div" class="ball-list"></div>
     </div>
-
 </div>
 
 <script>
-    // --- 1. SETUP WHEEL DATA (Standard European Order) ---
     const wheelNumbers = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26];
     const reds = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36];
     
-    // --- 2. DRAW THE WHEEL (SVG) ---
     const svg = document.getElementById('svg-wheel');
     const cx = 250, cy = 250, r = 250;
     const sliceAngle = 360 / 37;
 
     wheelNumbers.forEach((num, i) => {
-        // Create Slice
         const startAngle = i * sliceAngle;
         const endAngle = (i + 1) * sliceAngle;
-        
-        // Calculate SVG Path
         const x1 = cx + r * Math.cos(Math.PI * (startAngle - 90) / 180);
         const y1 = cy + r * Math.sin(Math.PI * (startAngle - 90) / 180);
         const x2 = cx + r * Math.cos(Math.PI * (endAngle - 90) / 180);
         const y2 = cy + r * Math.sin(Math.PI * (endAngle - 90) / 180);
-        
         const pathData = `M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 0 1 ${x2} ${y2} Z`;
         
         const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
         path.setAttribute("d", pathData);
-        
-        // Color Logic
-        let fill = "#2c3e50"; // Black
-        if (num === 0) fill = "#27ae60"; // Green
-        else if (reds.includes(num)) fill = "#c0392b"; // Red
-        
+        let fill = (num === 0) ? "#27ae60" : (reds.includes(num) ? "#c0392b" : "#2c3e50");
         path.setAttribute("fill", fill);
         path.setAttribute("stroke", "#f1c40f");
-        path.setAttribute("stroke-width", "2");
+        path.setAttribute("stroke-width", "1");
         svg.appendChild(path);
 
-        // Add Text Number
         const textAngle = startAngle + sliceAngle / 2;
-        const tx = cx + (r * 0.85) * Math.cos(Math.PI * (textAngle - 90) / 180);
-        const ty = cy + (r * 0.85) * Math.sin(Math.PI * (textAngle - 90) / 180);
-
+        const tx = cx + (r * 0.82) * Math.cos(Math.PI * (textAngle - 90) / 180);
+        const ty = cy + (r * 0.82) * Math.sin(Math.PI * (textAngle - 90) / 180);
         const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-        text.setAttribute("x", tx);
-        text.setAttribute("y", ty);
-        text.setAttribute("fill", "white");
-        text.setAttribute("font-size", "24");
-        text.setAttribute("font-weight", "bold");
-        text.setAttribute("text-anchor", "middle");
-        text.setAttribute("dominant-baseline", "middle");
-        text.setAttribute("transform", `rotate(${textAngle}, ${tx}, ${ty})`); // Rotate text to match slice
+        text.setAttribute("x", tx); text.setAttribute("y", ty);
+        text.setAttribute("fill", "white"); text.setAttribute("font-size", "22");
+        text.setAttribute("text-anchor", "middle"); text.setAttribute("dominant-baseline", "middle");
+        text.setAttribute("transform", `rotate(${textAngle}, ${tx}, ${ty})`);
         text.textContent = num;
         svg.appendChild(text);
     });
 
-    // --- 3. GAME LOGIC ---
     let history = [];
-    let counts = {};
-    for(let i=0; i<=36; i++) counts[i] = 0;
     let currentDeg = 0;
-
-    function getBubble(n) {
-        let c = n===0 ? 'bg-green' : (reds.includes(n) ? 'bg-red' : 'bg-black');
-        return `<div class="tiny-ball ${c}">${n}</div>`;
-    }
 
     function spinWheel() {
         const btn = document.querySelector('.spin-btn');
+        const ball = document.getElementById('ball');
         btn.disabled = true;
         document.getElementById('result').innerText = "...";
 
-        // Logic
-        const winningIndex = Math.floor(Math.random() * 37); // Index in wheelNumbers array
+        const winningIndex = Math.floor(Math.random() * 37);
         const winningNum = wheelNumbers[winningIndex];
 
-        // Calculate Angle to land on winningIndex
-        // The wheel spins clockwise, so to land on index i (at top), we rotate counter-logic
-        const sliceSize = 360/37;
-        const targetAngle = 360 - (winningIndex * sliceSize) - (sliceSize/2); // Center of slice
-        
-        // Add random full spins (5 to 10)
-        const spins = 5 + Math.floor(Math.random() * 5);
-        const totalRot = (spins * 360) + targetAngle; 
-        
-        // Adjust currentDeg to always spin forward smoothly
-        const currentMod = currentDeg % 360;
-        const dist = totalRot - currentMod;
-        currentDeg += (dist > 0 ? dist : dist + 360);
+        // WHEEL ANIMATION
+        const targetAngle = 360 - (winningIndex * sliceAngle) - (sliceAngle / 2);
+        const wheelSpins = 4 + Math.floor(Math.random() * 2);
+        const totalWheelRot = (wheelSpins * 360) + targetAngle;
+        currentDeg += (totalWheelRot - (currentDeg % 360));
+        svg.style.transform = `rotate(${currentDeg}deg)`;
 
-        // Animate
-        document.getElementById('svg-wheel').style.transform = `rotate(${currentDeg}deg)`;
+        // BALL ANIMATION
+        ball.style.display = "block";
+        const ballSpins = 6 + Math.floor(Math.random() * 3);
+        // Ball rotates opposite to wheel
+        const totalBallRot = -(ballSpins * 360 + (360 - targetAngle));
+        
+        ball.animate([
+            { transform: `translate(-50%, -50%) rotate(0deg) translateY(-138px)` },
+            { transform: `translate(-50%, -50%) rotate(${totalBallRot}deg) translateY(-100px)` }
+        ], {
+            duration: 4000,
+            easing: 'cubic-bezier(0.1, 0, 0.2, 1)',
+            fill: 'forwards'
+        });
 
         setTimeout(() => {
             updateData(winningNum);
@@ -223,40 +202,22 @@
 
     function updateData(num) {
         history.unshift(num);
-        counts[num]++;
-        
-        // Result Display
         const res = document.getElementById('result');
         res.innerText = num;
         res.className = "result-display " + (num===0 ? 'bg-green' : (reds.includes(num) ? 'bg-red' : 'bg-black'));
-
-        // Percentages
+        
         const total = history.length;
         let r = history.filter(n => reds.includes(n)).length;
         let b = history.filter(n => n!==0 && !reds.includes(n)).length;
         document.getElementById('red-pct').innerText = Math.round((r/total)*100) + "%";
         document.getElementById('black-pct').innerText = Math.round((b/total)*100) + "%";
         document.getElementById('total-spins').innerText = total;
-
-        // Hot
-        let hot = Object.keys(counts).filter(n => counts[n]>0).sort((a,b)=>counts[b]-counts[a]).slice(0,6);
-        document.getElementById('hot-div').innerHTML = hot.map(n => getBubble(parseInt(n))).join('');
-
-        // Cold (Last 15)
-        let recent = history.slice(0, 15);
-        let cold = [];
-        for(let i=0; i<=36; i++) if(!recent.includes(i)) cold.push(i);
-        document.getElementById('cold-div').innerHTML = cold.slice(0,8).map(n=>getBubble(n)).join('');
-
-        // History
-        document.getElementById('history-div').innerHTML = history.slice(0,10).map(n=>getBubble(n)).join('');
+        
+        document.getElementById('history-div').innerHTML = history.slice(0,10).map(n => {
+            let c = n===0 ? 'bg-green' : (reds.includes(n) ? 'bg-red' : 'bg-black');
+            return `<div class="tiny-ball ${c}">${n}</div>`;
+        }).join('');
     }
-    
-    // Init Cold
-    updateData(-1); // Dummy init
-    history = []; counts = {}; for(let i=0;i<=36;i++) counts[i]=0; // Reset after dummy
-    document.getElementById('result').innerText = "0";
 </script>
-
 </body>
 </html>
