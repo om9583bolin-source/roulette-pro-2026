@@ -3,219 +3,259 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Roulette Real Pro</title>
+    <title>Roulette SVG Pro</title>
     <style>
         body { 
-            background-color: #0a0a0a; /* Darker background */
-            color: #e0e0e0; 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #0f0f0f; 
+            color: #ecf0f1; 
+            font-family: 'Segoe UI', sans-serif; 
             text-align: center; 
-            margin: 0; padding: 15px;
+            margin: 0; padding: 10px;
         }
-        .container { max-width: 450px; margin: auto; padding-bottom: 40px; }
+        .container { max-width: 450px; margin: auto; padding-bottom: 50px; }
         
-        /* --- THE REAL WHEEL --- */
-        .wheel-container {
-            width: 280px; height: 280px; /* Slightly bigger */
+        /* WHEEL STYLES */
+        .wheel-wrapper {
+            width: 300px; height: 300px;
             margin: 20px auto;
             position: relative;
             border-radius: 50%;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.6);
-            border: 5px solid #1a1a1a;
+            border: 8px solid #2c3e50;
+            box-shadow: 0 0 25px rgba(0,0,0,0.8);
+            overflow: hidden;
         }
-        .wheel {
+        
+        /* The SVG Wheel Element */
+        #svg-wheel {
             width: 100%; height: 100%;
-            border-radius: 50%;
-            /* High-Quality Image with Numbers */
-            background: url('https://i.imgur.com/Ba8Y84m.png') no-repeat center center;
-            background-size: contain;
-            transition: transform 3.5s cubic-bezier(0.1, 0, 0.1, 1); /* Smoother spin */
+            transition: transform 4s cubic-bezier(0.1, 0, 0.1, 1);
         }
+
         .pointer {
-            position: absolute; top: -15px; left: 50%;
+            position: absolute; top: -10px; left: 50%;
             transform: translateX(-50%);
             width: 0; height: 0;
-            border-left: 12px solid transparent;
-            border-right: 12px solid transparent;
-            border-top: 25px solid #f1c40f; /* Gold pointer */
-            z-index: 20; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.5));
+            border-left: 15px solid transparent;
+            border-right: 15px solid transparent;
+            border-top: 30px solid #f1c40f;
+            z-index: 10; filter: drop-shadow(0 2px 2px black);
         }
-        .center-pin {
+        
+        .center-knob {
             position: absolute; top: 50%; left: 50%;
             transform: translate(-50%, -50%);
-            width: 30px; height: 30px;
-            background: radial-gradient(circle, #f1c40f 20%, #b7950b 100%);
-            border-radius: 50%; border: 3px solid #fff;
-            z-index: 10; box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            width: 50px; height: 50px;
+            background: radial-gradient(circle, #f1c40f, #b7950b);
+            border-radius: 50%;
+            border: 4px solid #fff;
+            box-shadow: 0 0 10px black;
+            z-index: 5;
+            display: flex; align-items: center; justify-content: center;
         }
 
-        /* --- CONTROLS --- */
-        .result-box {
-            font-size: 42px; font-weight: 800; margin: 15px 0;
-            display: inline-block; padding: 8px 35px;
-            border-radius: 50px; border: 3px solid #333;
-            background: #1a1a1a; min-width: 60px;
+        /* DASHBOARD */
+        .result-display {
+            font-size: 50px; font-weight: 800; margin: 15px 0;
+            display: inline-block; padding: 5px 40px;
+            border-radius: 10px; background: #1a1a1a;
+            border: 2px solid #333; min-width: 80px;
         }
-        .red { color: #ff3b3b; border-color: #ff3b3b; }
-        .black { color: #a0a0a0; border-color: #a0a0a0; }
-        .green { color: #2ecc71; border-color: #2ecc71; }
+        .bg-red { background-color: #c0392b !important; border-color: #e74c3c !important; }
+        .bg-black { background-color: #2c3e50 !important; border-color: #34495e !important; }
+        .bg-green { background-color: #27ae60 !important; border-color: #2ecc71 !important; }
 
-        .spin-btn {
-            background: linear-gradient(to bottom, #2ecc71, #27ae60);
-            color: white; border: none; padding: 16px 60px;
-            font-size: 22px; font-weight: bold; letter-spacing: 1px;
+        button.spin-btn {
+            background: linear-gradient(to right, #27ae60, #2ecc71);
+            border: none; padding: 15px 50px;
+            color: white; font-size: 22px; font-weight: bold;
             border-radius: 50px; cursor: pointer;
-            box-shadow: 0 6px 0 #1e8449, 0 8px 15px rgba(0,0,0,0.4);
-            transition: all 0.1s;
+            box-shadow: 0 5px 15px rgba(39, 174, 96, 0.4);
+            transition: transform 0.1s; width: 80%;
         }
-        .spin-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #1e8449, 0 4px 10px rgba(0,0,0,0.4); }
+        button.spin-btn:active { transform: scale(0.96); }
 
-        /* --- STATS PANEL --- */
-        .stats-panel { background: #1a1a1a; border-radius: 15px; padding: 20px; margin-top: 30px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        /* STATS */
+        .stats-box { background: #1e1e1e; padding: 15px; border-radius: 12px; margin-top: 25px; text-align: left; border: 1px solid #333; }
+        .stats-header { color: #f1c40f; font-size: 14px; text-transform: uppercase; border-bottom: 1px solid #444; padding-bottom: 5px; margin-bottom: 10px; }
         
-        .pct-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
-        .pct-box { background: #252525; padding: 15px; border-radius: 12px; position: relative; overflow: hidden; }
-        .pct-val { font-size: 28px; font-weight: bold; z-index: 1; position: relative; }
-        .pct-lbl { font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 1px; z-index: 1; position: relative; margin-top: 5px; }
-        .pct-bar { position: absolute; bottom: 0; left: 0; height: 6px; width: 0%; transition: width 0.5s; }
-
-        h3 { text-align: left; margin: 0 0 12px 0; color: #f1c40f; font-size: 16px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 2px solid #333; padding-bottom: 8px; }
-        
-        .ball-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 25px; }
-        .ball {
-            width: 36px; height: 36px; line-height: 36px;
-            text-align: center; border-radius: 50%;
-            font-size: 14px; font-weight: 700; color: white;
-            box-shadow: inset 0 0 8px rgba(0,0,0,0.4); border: 2px solid rgba(255,255,255,0.1);
+        .ball-list { display: flex; flex-wrap: wrap; gap: 6px; }
+        .tiny-ball {
+            width: 32px; height: 32px; line-height: 32px; text-align: center;
+            border-radius: 50%; font-size: 13px; font-weight: bold;
+            color: white; border: 1px solid rgba(255,255,255,0.2);
         }
-        .ball.red { background: linear-gradient(135deg, #ff3b3b, #c0392b); }
-        .ball.black { background: linear-gradient(135deg, #555, #2c3e50); }
-        .ball.green { background: linear-gradient(135deg, #2ecc71, #27ae60); }
-        .empty-msg { color: #666; font-style: italic; font-size: 14px; }
+        .grid-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 20px; text-align: center; }
+        .g-item { background: #252525; padding: 10px; border-radius: 8px; }
+        .g-val { font-size: 20px; font-weight: bold; display: block; }
+        .g-lbl { font-size: 10px; color: #777; }
+
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div class="wheel-container">
+    
+    <div class="wheel-wrapper">
         <div class="pointer"></div>
-        <div class="wheel" id="wheel"></div>
-        <div class="center-pin"></div>
+        <div class="center-knob"></div>
+        <svg id="svg-wheel" viewBox="0 0 500 500"></svg>
     </div>
 
-    <div id="result-display" class="result-box green">--</div>
+    <div id="result" class="result-display bg-green">0</div>
     <br>
-    <button class="spin-btn" onclick="spin()">SPIN NOW</button>
+    <button class="spin-btn" onclick="spinWheel()">SPIN IT</button>
 
-    <div class="stats-panel">
-        <div class="pct-grid">
-            <div class="pct-box">
-                <div id="red-pct" class="pct-val" style="color:#ff3b3b">0%</div>
-                <div class="pct-lbl">Red Hits</div>
-                <div id="red-bar" class="pct-bar" style="background:#ff3b3b"></div>
-            </div>
-            <div class="pct-box">
-                <div id="black-pct" class="pct-val" style="color:#a0a0a0">0%</div>
-                <div class="pct-lbl">Black Hits</div>
-                <div id="black-bar" class="pct-bar" style="background:#a0a0a0"></div>
-            </div>
+    <div class="stats-box">
+        <div class="grid-stats">
+            <div class="g-item"><span id="red-pct" class="g-val" style="color:#e74c3c">0%</span><span class="g-lbl">RED</span></div>
+            <div class="g-item"><span id="black-pct" class="g-val" style="color:#95a5a6">0%</span><span class="g-lbl">BLACK</span></div>
+            <div class="g-item"><span id="total-spins" class="g-val">0</span><span class="g-lbl">TOTAL</span></div>
         </div>
 
-        <h3>🔥 Hot Numbers (Most Frequent)</h3>
-        <div id="hot-list" class="ball-row"><span class="empty-msg">Spin to collect data...</span></div>
+        <div class="stats-header">🔥 HOT NUMBERS</div>
+        <div id="hot-div" class="ball-list"><span style="color:#555; font-size:12px;">Spin to start...</span></div>
 
-        <h3>❄️ Cold Numbers (Not in last 15)</h3>
-        <div id="cold-list" class="ball-row"></div>
+        <div class="stats-header" style="margin-top:20px;">❄️ COLD NUMBERS</div>
+        <div id="cold-div" class="ball-list"></div>
 
-        <h3>🕒 Recent History</h3>
-        <div id="history-row" class="ball-row"></div>
+        <div class="stats-header" style="margin-top:20px;">🕒 HISTORY</div>
+        <div id="history-div" class="ball-list"></div>
     </div>
+
 </div>
 
 <script>
-    // Game Data
+    // --- 1. SETUP WHEEL DATA (Standard European Order) ---
+    const wheelNumbers = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26];
     const reds = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36];
+    
+    // --- 2. DRAW THE WHEEL (SVG) ---
+    const svg = document.getElementById('svg-wheel');
+    const cx = 250, cy = 250, r = 250;
+    const sliceAngle = 360 / 37;
+
+    wheelNumbers.forEach((num, i) => {
+        // Create Slice
+        const startAngle = i * sliceAngle;
+        const endAngle = (i + 1) * sliceAngle;
+        
+        // Calculate SVG Path
+        const x1 = cx + r * Math.cos(Math.PI * (startAngle - 90) / 180);
+        const y1 = cy + r * Math.sin(Math.PI * (startAngle - 90) / 180);
+        const x2 = cx + r * Math.cos(Math.PI * (endAngle - 90) / 180);
+        const y2 = cy + r * Math.sin(Math.PI * (endAngle - 90) / 180);
+        
+        const pathData = `M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 0 1 ${x2} ${y2} Z`;
+        
+        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        path.setAttribute("d", pathData);
+        
+        // Color Logic
+        let fill = "#2c3e50"; // Black
+        if (num === 0) fill = "#27ae60"; // Green
+        else if (reds.includes(num)) fill = "#c0392b"; // Red
+        
+        path.setAttribute("fill", fill);
+        path.setAttribute("stroke", "#f1c40f");
+        path.setAttribute("stroke-width", "2");
+        svg.appendChild(path);
+
+        // Add Text Number
+        const textAngle = startAngle + sliceAngle / 2;
+        const tx = cx + (r * 0.85) * Math.cos(Math.PI * (textAngle - 90) / 180);
+        const ty = cy + (r * 0.85) * Math.sin(Math.PI * (textAngle - 90) / 180);
+
+        const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        text.setAttribute("x", tx);
+        text.setAttribute("y", ty);
+        text.setAttribute("fill", "white");
+        text.setAttribute("font-size", "24");
+        text.setAttribute("font-weight", "bold");
+        text.setAttribute("text-anchor", "middle");
+        text.setAttribute("dominant-baseline", "middle");
+        text.setAttribute("transform", `rotate(${textAngle}, ${tx}, ${ty})`); // Rotate text to match slice
+        text.textContent = num;
+        svg.appendChild(text);
+    });
+
+    // --- 3. GAME LOGIC ---
     let history = [];
     let counts = {};
     for(let i=0; i<=36; i++) counts[i] = 0;
-    let currentRotation = 0;
+    let currentDeg = 0;
 
-    // Helper: Get ball HTML
-    function getBall(n) {
-        let color = n === 0 ? 'green' : (reds.includes(n) ? 'red' : 'black');
-        return `<div class="ball ${color}">${n}</div>`;
+    function getBubble(n) {
+        let c = n===0 ? 'bg-green' : (reds.includes(n) ? 'bg-red' : 'bg-black');
+        return `<div class="tiny-ball ${c}">${n}</div>`;
     }
 
-    // Main Action
-    function spin() {
+    function spinWheel() {
         const btn = document.querySelector('.spin-btn');
-        btn.disabled = true; btn.style.opacity = "0.7"; btn.innerText = "Spinning...";
-        document.getElementById('result-display').innerText = "...";
+        btn.disabled = true;
+        document.getElementById('result').innerText = "...";
 
-        // 1. Decide Result
-        const winningNum = Math.floor(Math.random() * 37);
+        // Logic
+        const winningIndex = Math.floor(Math.random() * 37); // Index in wheelNumbers array
+        const winningNum = wheelNumbers[winningIndex];
+
+        // Calculate Angle to land on winningIndex
+        // The wheel spins clockwise, so to land on index i (at top), we rotate counter-logic
+        const sliceSize = 360/37;
+        const targetAngle = 360 - (winningIndex * sliceSize) - (sliceSize/2); // Center of slice
         
-        // 2. Animate Wheel
-        const wheel = document.getElementById('wheel');
-        // Add huge rotation + random slice offset
-        const extraSpins = 8 + Math.floor(Math.random() * 5);
-        const randomOffset = Math.floor(Math.random() * 360);
-        currentRotation += (extraSpins * 360) + randomOffset;
-        wheel.style.transform = `rotate(${currentRotation}deg)`;
+        // Add random full spins (5 to 10)
+        const spins = 5 + Math.floor(Math.random() * 5);
+        const totalRot = (spins * 360) + targetAngle; 
         
-        // 3. Show Result after animation
+        // Adjust currentDeg to always spin forward smoothly
+        const currentMod = currentDeg % 360;
+        const dist = totalRot - currentMod;
+        currentDeg += (dist > 0 ? dist : dist + 360);
+
+        // Animate
+        document.getElementById('svg-wheel').style.transform = `rotate(${currentDeg}deg)`;
+
         setTimeout(() => {
-            processResult(winningNum);
-            btn.disabled = false; btn.style.opacity = "1"; btn.innerText = "SPIN NOW";
-        }, 3500);
+            updateData(winningNum);
+            btn.disabled = false;
+        }, 4000);
     }
 
-    // Process Data
-    function processResult(num) {
+    function updateData(num) {
         history.unshift(num);
         counts[num]++;
         
-        // Update Result Box
-        const disp = document.getElementById('result-display');
-        disp.innerText = num;
-        disp.className = "result-box " + (num===0 ? 'green' : (reds.includes(num) ? 'red' : 'black'));
-        
-        updateUI();
-    }
-
-    // Update all Stats
-    function updateUI() {
-        const total = history.length;
-        if(total === 0) return;
+        // Result Display
+        const res = document.getElementById('result');
+        res.innerText = num;
+        res.className = "result-display " + (num===0 ? 'bg-green' : (reds.includes(num) ? 'bg-red' : 'bg-black'));
 
         // Percentages
+        const total = history.length;
         let r = history.filter(n => reds.includes(n)).length;
         let b = history.filter(n => n!==0 && !reds.includes(n)).length;
-        let rPct = Math.round((r/total)*100);
-        let bPct = Math.round((b/total)*100);
-        
-        document.getElementById('red-pct').innerText = rPct + "%";
-        document.getElementById('black-pct').innerText = bPct + "%";
-        document.getElementById('red-bar').style.width = rPct + "%";
-        document.getElementById('black-bar').style.width = bPct + "%";
+        document.getElementById('red-pct').innerText = Math.round((r/total)*100) + "%";
+        document.getElementById('black-pct').innerText = Math.round((b/total)*100) + "%";
+        document.getElementById('total-spins').innerText = total;
 
         // Hot
-        let sorted = Object.keys(counts).sort((a,b) => counts[b] - counts[a]);
-        let hot = sorted.filter(n => counts[n] > 0).slice(0, 6);
-        document.getElementById('hot-list').innerHTML = hot.length ? hot.map(n => getBall(parseInt(n))).join('') : '<span class="empty-msg">Spin more...</span>';
+        let hot = Object.keys(counts).filter(n => counts[n]>0).sort((a,b)=>counts[b]-counts[a]).slice(0,6);
+        document.getElementById('hot-div').innerHTML = hot.map(n => getBubble(parseInt(n))).join('');
 
         // Cold (Last 15)
-        let recent15 = history.slice(0, 15);
+        let recent = history.slice(0, 15);
         let cold = [];
-        for(let i=0; i<=36; i++) if(!recent15.includes(i)) cold.push(i);
-        document.getElementById('cold-list').innerHTML = cold.slice(0, 8).map(n => getBall(n)).join('');
+        for(let i=0; i<=36; i++) if(!recent.includes(i)) cold.push(i);
+        document.getElementById('cold-div').innerHTML = cold.slice(0,8).map(n=>getBubble(n)).join('');
 
         // History
-        document.getElementById('history-row').innerHTML = history.slice(0, 10).map(n => getBall(n)).join('');
+        document.getElementById('history-div').innerHTML = history.slice(0,10).map(n=>getBubble(n)).join('');
     }
-
-    // Init
-    updateUI();
+    
+    // Init Cold
+    updateData(-1); // Dummy init
+    history = []; counts = {}; for(let i=0;i<=36;i++) counts[i]=0; // Reset after dummy
+    document.getElementById('result').innerText = "0";
 </script>
 
 </body>
