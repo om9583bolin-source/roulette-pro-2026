@@ -1,53 +1,130 @@
-function executeSpin() {
-    const btn = document.getElementById('spin-btn');
-    const ball = document.getElementById('ball');
-    const wheel = document.getElementById('wheel-svg');
-    btn.disabled = true;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roulette Pro - Physics Engine</title>
+    <style>
+        body { background: #0f0f0f; color: white; font-family: sans-serif; text-align: center; margin: 0; padding: 10px; }
+        .container { max-width: 450px; margin: auto; }
+        
+        /* Stats Dashboard */
+        .stats-box { background: #1e1e1e; padding: 10px; border-radius: 12px; margin-bottom: 10px; border: 1px solid #333; }
+        .grid-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-bottom: 5px; }
+        .g-item { background: #252525; padding: 5px; border-radius: 5px; }
+        .g-val { font-size: 16px; font-weight: bold; display: block; }
+        .g-lbl { font-size: 9px; color: #888; }
 
-    // 1. Random Physics (Har baar alag force)
-    const wheelPower = 2000 + Math.random() * 2000; // Total rotation
-    const ballPower = 3000 + Math.random() * 2000;  // Total rotation
+        /* Wheel Section */
+        .wheel-wrapper { position: relative; width: 320px; height: 320px; margin: 15px auto; border-radius: 50%; border: 8px solid #1a1a1a; box-shadow: 0 0 20px #000; }
+        #wheel-svg { width: 100%; height: 100%; transition: transform 6s cubic-bezier(0.15, 0, 0.15, 1); }
+        #ball {
+            position: absolute; top: 50%; left: 50%; width: 12px; height: 12px;
+            background: radial-gradient(circle at 30% 30%, #fff, #999);
+            border-radius: 50%; z-index: 20; display: none; transform-origin: center;
+        }
+        .center-knob { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 40px; height: 40px; background: gold; border-radius: 50%; z-index: 10; border: 2px solid #fff; }
 
-    // 2. Wheel Spin (Anti-Clockwise)
-    wheelDeg -= wheelPower;
-    wheel.style.transform = `rotate(${wheelDeg}deg)`;
+        /* Button & Result */
+        .result-display { font-size: 40px; font-weight: bold; margin-bottom: 10px; padding: 10px; background: #1a1a1a; border-radius: 10px; min-width: 60px; display: inline-block; border: 2px solid #333; }
+        .bg-red { background: #c0392b; } .bg-black { background: #2c3e50; } .bg-green { background: #27ae60; }
+        button { background: #27ae60; color: white; border: none; padding: 15px 50px; font-size: 20px; border-radius: 50px; cursor: pointer; width: 80%; }
+        button:disabled { opacity: 0.5; }
+    </style>
+</head>
+<body>
 
-    // 3. Ball Spin (Clockwise)
-    ball.style.display = "block";
-    
-    // Animation logic
-    const ballAnim = ball.animate([
-        { transform: `translate(-50%, -50%) rotate(0deg) translateY(-155px)` },
-        { transform: `translate(-50%, -50%) rotate(${ballPower * 0.8}deg) translateY(-155px)`, offset: 0.8 },
-        { transform: `translate(-50%, -50%) rotate(${ballPower}deg) translateY(-110px)` }
-    ], {
-        duration: 6000,
-        easing: 'cubic-bezier(0.15, 0, 0.15, 1)',
-        fill: 'forwards'
+<div class="container">
+    <div class="stats-box">
+        <div class="grid-stats">
+            <div class="g-item"><span id="red-pct" class="g-val">0%</span><span class="g-lbl">RED</span></div>
+            <div class="g-item"><span id="black-pct" class="g-val">0%</span><span class="g-lbl">BLACK</span></div>
+            <div class="g-item"><span id="total-spins" class="g-val">0</span><span class="g-lbl">TOTAL</span></div>
+        </div>
+        <div id="history-div" style="display:flex; gap:4px; overflow-x:auto; padding:5px;"></div>
+    </div>
+
+    <div class="wheel-wrapper">
+        <div id="ball"></div>
+        <div class="center-knob"></div>
+        <svg id="wheel-svg" viewBox="0 0 500 500"></svg>
+    </div>
+
+    <div id="result" class="result-display bg-green">0</div><br>
+    <button id="spin-btn" onclick="executeSpin()">SPIN IT</button>
+</div>
+
+<script>
+    const numbers = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26];
+    const reds = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36];
+    let wheelDeg = 0;
+    let history = [];
+
+    // Draw Wheel
+    const svg = document.getElementById('wheel-svg');
+    const angle = 360 / 37;
+    numbers.forEach((n, i) => {
+        const sA = i * angle, eA = (i + 1) * angle;
+        const x1 = 250 + 250 * Math.cos(Math.PI*(sA-90)/180), y1 = 250 + 250 * Math.sin(Math.PI*(sA-90)/180);
+        const x2 = 250 + 250 * Math.cos(Math.PI*(eA-90)/180), y2 = 250 + 250 * Math.sin(Math.PI*(eA-90)/180);
+        const p = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        p.setAttribute("d", `M 250 250 L ${x1} ${y1} A 250 250 0 0 1 ${x2} ${y2} Z`);
+        p.setAttribute("fill", n===0?"#27ae60":(reds.includes(n)?"#c0392b":"#1a1a1a"));
+        p.setAttribute("stroke", "#f1c40f");
+        svg.appendChild(p);
+        const tA = sA + angle/2;
+        const tx = 250 + 210 * Math.cos(Math.PI*(tA-90)/180), ty = 250 + 210 * Math.sin(Math.PI*(tA-90)/180);
+        const t = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        t.setAttribute("x", tx); t.setAttribute("y", ty); t.setAttribute("fill", "white");
+        t.setAttribute("font-size", "22"); t.setAttribute("text-anchor", "middle");
+        t.setAttribute("transform", `rotate(${tA}, ${tx}, ${ty})`);
+        t.textContent = n; svg.appendChild(t);
     });
 
-    ballAnim.onfinish = () => {
-        // --- REAL CALCULATION START ---
-        
-        // Wheel ki current rotation (Normalized to 0-360)
-        const actualWheelDeg = Math.abs(wheelDeg) % 360;
-        
-        // Ball ki current rotation (Normalized to 0-360)
-        const actualBallDeg = ballPower % 360;
+    function executeSpin() {
+        const btn = document.getElementById('spin-btn');
+        const ball = document.getElementById('ball');
+        const wheel = document.getElementById('wheel-svg');
+        btn.disabled = true; document.getElementById('result').innerText = "...";
 
-        // Dono ke beech ka relative angle
-        // Formula: (Ball Angle + Wheel Angle) % 360
-        let finalAngle = (actualBallDeg + actualWheelDeg) % 360;
+        // Physics Logic
+        const wheelPower = 2000 + Math.random() * 2000;
+        const ballPower = 3000 + Math.random() * 2000;
         
-        // 37 slices hain, har slice 9.72 degrees ki
-        const winningIndex = Math.floor(finalAngle / (360 / 37));
-        const winNum = numbers[winningIndex];
+        wheelDeg -= wheelPower;
+        wheel.style.transform = `rotate(${wheelDeg}deg)`;
 
-        // --- REAL CALCULATION END ---
+        ball.style.display = "block";
+        const ballAnim = ball.animate([
+            { transform: `translate(-50%, -50%) rotate(0deg) translateY(-150px)` },
+            { transform: `translate(-50%, -50%) rotate(${ballPower * 0.8}deg) translateY(-150px)`, offset: 0.8 },
+            { transform: `translate(-50%, -50%) rotate(${ballPower}deg) translateY(-110px)` }
+        ], { duration: 6000, easing: 'cubic-bezier(0.15, 0, 0.15, 1)', fill: 'forwards' });
 
-        setTimeout(() => {
-            alert("Ball has landed on: " + winNum);
+        ballAnim.onfinish = () => {
+            const actualWheelDeg = Math.abs(wheelDeg) % 360;
+            const actualBallDeg = ballPower % 360;
+            let finalAngle = (actualBallDeg + actualWheelDeg) % 360;
+            const winningIndex = Math.floor(finalAngle / (360/37));
+            updateData(numbers[winningIndex]);
             btn.disabled = false;
-        }, 500);
-    };
-}
+        };
+    }
+
+    function updateData(n) {
+        history.unshift(n);
+        const res = document.getElementById('result');
+        res.innerText = n;
+        res.className = "result-display " + (n===0?'bg-green':(reds.includes(n)?'bg-red':'bg-black'));
+        
+        const total = history.length;
+        document.getElementById('red-pct').innerText = Math.round((history.filter(x=>reds.includes(x)).length/total)*100) + "%";
+        document.getElementById('black-pct').innerText = Math.round((history.filter(x=>x!==0 && !reds.includes(x)).length/total)*100) + "%";
+        document.getElementById('total-spins').innerText = total;
+
+        const bH = (num) => `<div style="min-width:30px;height:30px;line-height:30px;border-radius:50%;color:white;font-size:12px;font-weight:bold;text-align:center;background:${num===0?'#27ae60':(reds.includes(num)?'#c0392b':'#2c3e50')}">${num}</div>`;
+        document.getElementById('history-div').innerHTML = history.slice(0,10).map(bH).join('');
+    }
+</script>
+</body>
+</html>
