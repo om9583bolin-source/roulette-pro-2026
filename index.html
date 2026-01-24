@@ -3,145 +3,139 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Roulette Pro - Full Stats Edition</title>
+    <title>Realistic Roulette Wheel Only</title>
     <style>
-        body { background-color: #0f0f0f; color: #ecf0f1; font-family: 'Segoe UI', sans-serif; text-align: center; margin: 0; padding: 10px; }
-        .container { max-width: 450px; margin: auto; display: flex; flex-direction: column; }
-        
-        /* TOP STATS DASHBOARD */
-        .stats-box { background: #1e1e1e; padding: 12px; border-radius: 12px; margin-bottom: 15px; text-align: left; border: 1px solid #333; order: 1; }
-        .grid-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 12px; text-align: center; }
-        .g-item { background: #252525; padding: 10px; border-radius: 8px; border: 1px solid #444; }
-        .g-val { font-size: 20px; font-weight: bold; display: block; }
-        .g-lbl { font-size: 10px; color: #aaa; letter-spacing: 1px; }
-        
-        .stats-header { color: #f1c40f; font-size: 11px; text-transform: uppercase; border-bottom: 1px solid #444; padding-bottom: 3px; margin-bottom: 8px; margin-top: 10px; }
-        .ball-list { display: flex; flex-wrap: wrap; gap: 6px; min-height: 32px; }
-        .tiny-ball { width: 32px; height: 32px; line-height: 32px; text-align: center; border-radius: 50%; font-size: 13px; font-weight: bold; color: white; border: 1px solid rgba(255,255,255,0.1); }
-        
-        /* WHEEL SECTION */
-        .wheel-section { order: 2; position: relative; width: 300px; height: 300px; margin: 10px auto; }
-        .wheel-wrapper { width: 100%; height: 100%; position: relative; border-radius: 50%; border: 8px solid #1a1a1a; box-shadow: 0 0 25px rgba(0,0,0,0.8); background: #2c3e50; }
-        #svg-wheel { width: 100%; height: 100%; transition: transform 5s cubic-bezier(0.1, 0, 0.2, 1); }
-        #ball { position: absolute; top: 50%; left: 50%; width: 12px; height: 12px; background: radial-gradient(circle at 30% 30%, #fff, #999); border-radius: 50%; z-index: 20; display: none; box-shadow: 2px 2px 5px rgba(0,0,0,0.5); transform-origin: center; }
-        .center-knob { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 45px; height: 45px; background: radial-gradient(circle, #f1c40f, #b7950b); border-radius: 50%; z-index: 10; border: 2px solid #fff; }
+        body { 
+            background-color: #0f0f0f; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            height: 100vh; margin: 0; font-family: sans-serif;
+        }
 
-        /* CONTROLS */
-        .controls { order: 3; margin-top: 15px; }
-        .result-display { font-size: 55px; font-weight: 800; margin-bottom: 15px; display: inline-block; padding: 5px 45px; border-radius: 15px; background: #1a1a1a; border: 2px solid #333; min-width: 90px; }
-        .bg-red { background: #c0392b; border-color: #e74c3c; } .bg-black { background: #2c3e50; border-color: #34495e; } .bg-green { background: #27ae60; border-color: #2ecc71; }
+        .wheel-container {
+            position: relative;
+            width: 350px; height: 350px;
+            border-radius: 50%;
+            border: 12px solid #1a1a1a;
+            box-shadow: 0 0 50px rgba(0,0,0,0.7), inset 0 0 20px #000;
+            background: #2c3e50;
+        }
 
-        button.spin-btn { background: linear-gradient(to bottom, #27ae60, #1e8449); border: none; padding: 18px; color: white; font-size: 24px; font-weight: bold; border-radius: 50px; cursor: pointer; width: 85%; box-shadow: 0 5px 15px rgba(0,0,0,0.4); }
-        button:disabled { opacity: 0.6; cursor: not-allowed; }
+        /* The SVG Wheel - Turns Anti-Clockwise */
+        #svg-wheel {
+            width: 100%; height: 100%;
+            transition: transform 6s cubic-bezier(0.1, 0, 0.1, 1);
+        }
+
+        /* The Ball - Turns Clockwise */
+        #ball {
+            position: absolute; top: 50%; left: 50%;
+            width: 14px; height: 14px;
+            background: radial-gradient(circle at 30% 30%, #ffffff, #999);
+            border-radius: 50%;
+            z-index: 100;
+            display: none;
+            box-shadow: 2px 2px 10px rgba(0,0,0,0.8);
+            transform-origin: center;
+        }
+
+        .center-knob {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60px; height: 60px;
+            background: radial-gradient(circle, #f1c40f, #b7950b);
+            border-radius: 50%;
+            border: 4px solid #fff;
+            z-index: 10;
+        }
+
+        button {
+            margin-top: 40px;
+            padding: 15px 60px;
+            font-size: 24px; font-weight: bold;
+            color: white; background: #27ae60;
+            border: none; border-radius: 50px;
+            cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+        }
+        button:disabled { opacity: 0.5; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <div class="stats-box">
-        <div class="grid-stats">
-            <div class="g-item"><span id="red-pct" class="g-val" style="color:#e74c3c">0%</span><span class="g-lbl">RED</span></div>
-            <div class="g-item"><span id="black-pct" class="g-val" style="color:#95a5a6">0%</span><span class="g-lbl">BLACK</span></div>
-            <div class="g-item"><span id="total-spins" class="g-val">0</span><span class="g-lbl">TOTAL</span></div>
-        </div>
-        
-        <div class="stats-header">🕒 RECENT HISTORY</div>
-        <div id="history-div" class="ball-list"></div>
-
-        <div style="display: flex; justify-content: space-between; gap: 10px;">
-            <div style="flex: 1;"><div class="stats-header">🔥 HOT (TOP 5)</div><div id="hot-div" class="ball-list"></div></div>
-            <div style="flex: 1;"><div class="stats-header">❄️ COLD (TOP 5)</div><div id="cold-div" class="ball-list"></div></div>
-        </div>
+    <div class="wheel-container">
+        <div id="ball"></div>
+        <div class="center-knob"></div>
+        <svg id="svg-wheel" viewBox="0 0 500 500"></svg>
     </div>
 
-    <div class="wheel-section">
-        <div class="wheel-wrapper">
-            <div id="ball"></div>
-            <div class="center-knob"></div>
-            <svg id="svg-wheel" viewBox="0 0 500 500"></svg>
-        </div>
-    </div>
-
-    <div class="controls">
-        <div id="result" class="result-display bg-green">0</div><br>
-        <button class="spin-btn" id="spin-btn" onclick="spinWheel()">SPIN IT</button>
-    </div>
-</div>
+    <button id="spin-btn" onclick="spinWheel()">SPIN</button>
 
 <script>
     const wheelNumbers = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26];
     const reds = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36];
-    let history = [], counts = {}, currentDeg = 0;
-    for(let i=0; i<=36; i++) counts[i] = 0;
+    let currentWheelDeg = 0;
 
+    // Drawing the SVG Wheel once
     const svg = document.getElementById('svg-wheel');
     const sliceA = 360 / 37;
 
     wheelNumbers.forEach((num, i) => {
-        const start = i * sliceA, end = (i + 1) * sliceA;
-        const x1 = 250 + 250 * Math.cos(Math.PI*(start-90)/180), y1 = 250 + 250 * Math.sin(Math.PI*(start-90)/180);
-        const x2 = 250 + 250 * Math.cos(Math.PI*(end-90)/180), y2 = 250 + 250 * Math.sin(Math.PI*(end-90)/180);
-        const p = document.createElementNS("http://www.w3.org/2000/svg", "path");
-        p.setAttribute("d", `M 250 250 L ${x1} ${y1} A 250 250 0 0 1 ${x2} ${y2} Z`);
-        p.setAttribute("fill", num===0?"#27ae60":(reds.includes(num)?"#c0392b":"#1a1a1a"));
-        p.setAttribute("stroke", "#f1c40f"); p.setAttribute("stroke-width", "0.5");
-        svg.appendChild(p);
+        const start = i * sliceA;
+        const end = (i + 1) * sliceA;
+        const x1 = 250 + 250 * Math.cos(Math.PI * (start - 90) / 180);
+        const y1 = 250 + 250 * Math.sin(Math.PI * (start - 90) / 180);
+        const x2 = 250 + 250 * Math.cos(Math.PI * (end - 90) / 180);
+        const y2 = 250 + 250 * Math.sin(Math.PI * (end - 90) / 180);
+        
+        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        path.setAttribute("d", `M 250 250 L ${x1} ${y1} A 250 250 0 0 1 ${x2} ${y2} Z`);
+        path.setAttribute("fill", num === 0 ? "#27ae60" : (reds.includes(num) ? "#c0392b" : "#1a1a1a"));
+        path.setAttribute("stroke", "#f1c40f");
+        svg.appendChild(path);
 
-        const tA = start + sliceA/2;
-        const tx = 250 + 215 * Math.cos(Math.PI*(tA-90)/180), ty = 250 + 215 * Math.sin(Math.PI*(tA-90)/180);
+        const tA = start + sliceA / 2;
+        const tx = 250 + 210 * Math.cos(Math.PI * (tA - 90) / 180);
+        const ty = 250 + 210 * Math.sin(Math.PI * (tA - 90) / 180);
         const t = document.createElementNS("http://www.w3.org/2000/svg", "text");
-        t.setAttribute("x", tx); t.setAttribute("y", ty); t.setAttribute("fill", "white"); t.setAttribute("font-size", "22");
+        t.setAttribute("x", tx); t.setAttribute("y", ty);
+        t.setAttribute("fill", "white"); t.setAttribute("font-size", "22");
         t.setAttribute("text-anchor", "middle"); t.setAttribute("transform", `rotate(${tA}, ${tx}, ${ty})`);
-        t.textContent = num; svg.appendChild(t);
+        t.textContent = num;
+        svg.appendChild(t);
     });
 
     function spinWheel() {
-        const btn = document.getElementById('spin-btn'), ball = document.getElementById('ball');
-        btn.disabled = true; document.getElementById('result').innerText = "...";
+        const btn = document.getElementById('spin-btn');
+        const ball = document.getElementById('ball');
+        btn.disabled = true;
 
         const winIdx = Math.floor(Math.random() * 37);
-        const winNum = wheelNumbers[winIdx];
-        const targetWheelA = (winIdx * sliceA); 
-        const wheelSpins = (5 + Math.floor(Math.random() * 2)) * 360;
+        const targetWheelA = (winIdx * sliceA);
 
-        // ANTI-CLOCKWISE Wheel
-        currentDeg -= (wheelSpins + targetWheelA); 
-        document.getElementById('svg-wheel').style.transform = `rotate(${currentDeg}deg)`;
+        // 1. Wheel Spins ANTI-CLOCKWISE
+        const wheelSpins = (6 + Math.floor(Math.random() * 2)) * 360;
+        currentWheelDeg -= (wheelSpins + targetWheelA); 
+        svg.style.transform = `rotate(${currentWheelDeg}deg)`;
 
-        // CLOCKWISE Ball
+        // 2. Ball Animation - CLOCKWISE (Independent)
         ball.style.display = "block";
-        const ballSpins = (8 + Math.floor(Math.random() * 2)) * 360;
+        const ballSpins = (10 + Math.floor(Math.random() * 3)) * 360;
         const totalBallRot = (ballSpins + targetWheelA);
 
         ball.animate([
-            { transform: `translate(-50%, -50%) rotate(0deg) translateY(-142px)` },
-            { transform: `translate(-50%, -50%) rotate(${totalBallRot * 0.75}deg) translateY(-142px)`, offset: 0.75 },
-            { transform: `translate(-50%, -50%) rotate(${totalBallRot}deg) translateY(-102px)` }
-        ], { duration: 5000, easing: 'cubic-bezier(0.1, 0, 0.2, 1)', fill: 'forwards' });
+            { transform: `translate(-50%, -50%) rotate(0deg) translateY(-160px)` },
+            { transform: `translate(-50%, -50%) rotate(${totalBallRot * 0.8}deg) translateY(-160px)`, offset: 0.8 },
+            { transform: `translate(-50%, -50%) rotate(${totalBallRot}deg) translateY(-115px)` }
+        ], {
+            duration: 6000,
+            easing: 'cubic-bezier(0.1, 0, 0.1, 1)',
+            fill: 'forwards'
+        });
 
         setTimeout(() => {
-            updateData(winNum);
             btn.disabled = false;
-        }, 5000);
-    }
-
-    function updateData(n) {
-        history.unshift(n); counts[n]++;
-        const r = document.getElementById('result'); r.innerText = n;
-        r.className = "result-display " + (n===0?'bg-green':(reds.includes(n)?'bg-red':'bg-black'));
-        
-        const total = history.length;
-        document.getElementById('red-pct').innerText = Math.round((history.filter(x=>reds.includes(x)).length/total)*100) + "%";
-        document.getElementById('black-pct').innerText = Math.round((history.filter(x=>x!==0 && !reds.includes(x)).length/total)*100) + "%";
-        document.getElementById('total-spins').innerText = total;
-
-        const bH = (num) => `<div class="tiny-ball ${num===0?'bg-green':(reds.includes(num)?'bg-red':'bg-black')}">${num}</div>`;
-        document.getElementById('history-div').innerHTML = history.slice(0,10).map(bH).join('');
-        document.getElementById('hot-div').innerHTML = Object.keys(counts).sort((a,b)=>counts[b]-counts[a]).slice(0,5).filter(x=>counts[x]>0).map(x=>bH(parseInt(x))).join('');
-        let cold = []; for(let i=0; i<=36; i++) if(!history.slice(0,15).includes(i)) cold.push(i);
-        document.getElementById('cold-div').innerHTML = cold.slice(0,5).map(bH).join('');
+            console.log("Result: " + wheelNumbers[winIdx]);
+        }, 6000);
     }
 </script>
 </body>
-                                                                    </html>
-                                                                    
+</html>
