@@ -1,102 +1,3 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Roulette Pro - Top 5 Stats</title>
-    <style>
-        body { background-color: #0f0f0f; color: #ecf0f1; font-family: 'Segoe UI', sans-serif; text-align: center; margin: 0; padding: 10px; }
-        .container { max-width: 450px; margin: auto; display: flex; flex-direction: column; }
-        
-        /* STATS BOX AT TOP */
-        .stats-box { background: #1e1e1e; padding: 12px; border-radius: 12px; margin-bottom: 15px; text-align: left; border: 1px solid #333; order: 1; }
-        .stats-header { color: #f1c40f; font-size: 11px; text-transform: uppercase; border-bottom: 1px solid #444; padding-bottom: 3px; margin-bottom: 8px; margin-top: 8px; letter-spacing: 1px; }
-        .ball-list { display: flex; flex-wrap: wrap; gap: 6px; min-height: 32px; }
-        .tiny-ball { width: 32px; height: 32px; line-height: 32px; text-align: center; border-radius: 50%; font-size: 13px; font-weight: bold; color: white; border: 1px solid rgba(255,255,255,0.1); }
-        
-        .grid-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 10px; text-align: center; }
-        .g-item { background: #252525; padding: 8px; border-radius: 8px; border: 1px solid #333; }
-        .g-val { font-size: 18px; font-weight: bold; display: block; }
-        .g-lbl { font-size: 9px; color: #777; }
-
-        /* WHEEL SECTION */
-        .wheel-section { order: 2; margin: 5px 0; }
-        .wheel-wrapper {
-            width: 290px; height: 290px; margin: auto;
-            position: relative; border-radius: 50%;
-            border: 6px solid #2c3e50; box-shadow: 0 0 20px rgba(0,0,0,0.8);
-            background: #2c3e50;
-        }
-        #svg-wheel { width: 100%; height: 100%; transition: transform 4s cubic-bezier(0.1, 0, 0.1, 1); }
-        #ball {
-            position: absolute; top: 50%; left: 50%; width: 10px; height: 10px;
-            background: radial-gradient(circle, #fff, #ccc); border-radius: 50%;
-            z-index: 15; display: none; box-shadow: 0 0 5px white;
-        }
-        .center-knob { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 45px; height: 45px; background: radial-gradient(circle, #f1c40f, #b7950b); border-radius: 50%; z-index: 10; border: 2px solid #fff; }
-
-        /* BOTTOM SECTION */
-        .controls { order: 3; margin-top: 15px; }
-        .result-display {
-            font-size: 48px; font-weight: 800; margin-bottom: 15px;
-            display: inline-block; padding: 5px 40px; border-radius: 12px;
-            background: #1a1a1a; border: 2px solid #333; min-width: 80px;
-        }
-        .bg-red { background-color: #c0392b; border-color: #e74c3c; }
-        .bg-black { background-color: #2c3e50; border-color: #34495e; }
-        .bg-green { background-color: #27ae60; border-color: #2ecc71; }
-
-        button.spin-btn {
-            background: linear-gradient(to right, #27ae60, #2ecc71);
-            border: none; padding: 16px; color: white;
-            font-size: 22px; font-weight: bold; border-radius: 50px;
-            cursor: pointer; width: 85%; box-shadow: 0 5px 15px rgba(39, 174, 96, 0.4);
-            transition: 0.1s;
-        }
-        button.spin-btn:active { transform: scale(0.96); }
-        button.spin-btn:disabled { opacity: 0.5; }
-    </style>
-</head>
-<body>
-
-<div class="container">
-    <div class="stats-box">
-        <div class="grid-stats">
-            <div class="g-item"><span id="red-pct" class="g-val" style="color:#e74c3c">0%</span><span class="g-lbl">RED</span></div>
-            <div class="g-item"><span id="black-pct" class="g-val" style="color:#95a5a6">0%</span><span class="g-lbl">BLACK</span></div>
-            <div class="g-item"><span id="total-spins" class="g-val">0</span><span class="g-lbl">TOTAL</span></div>
-        </div>
-        
-        <div class="stats-header">🕒 RECENT HISTORY</div>
-        <div id="history-div" class="ball-list"></div>
-
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-            <div>
-                <div class="stats-header">🔥 TOP 5 HOT</div>
-                <div id="hot-div" class="ball-list"></div>
-            </div>
-            <div>
-                <div class="stats-header">❄️ TOP 5 COLD</div>
-                <div id="cold-div" class="ball-list"></div>
-            </div>
-        </div>
-    </div>
-
-    <div class="wheel-section">
-        <div class="wheel-wrapper">
-            <div id="ball"></div>
-            <div class="center-knob"></div>
-            <svg id="svg-wheel" viewBox="0 0 500 500"></svg>
-        </div>
-    </div>
-
-    <div class="controls">
-        <div id="result" class="result-display bg-green">0</div>
-        <br>
-        <button class="spin-btn" id="spin-btn" onclick="spinWheel()">SPIN IT</button>
-    </div>
-</div>
-
 <script>
     const wheelNumbers = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26];
     const reds = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36];
@@ -105,54 +6,41 @@
     for(let i=0; i<=36; i++) counts[i] = 0;
     let currentDeg = 0;
 
-    const svg = document.getElementById('svg-wheel');
-    const sliceA = 360 / 37;
-
-    wheelNumbers.forEach((num, i) => {
-        const start = i * sliceA;
-        const end = (i + 1) * sliceA;
-        const x1 = 250 + 250 * Math.cos(Math.PI*(start-90)/180);
-        const y1 = 250 + 250 * Math.sin(Math.PI*(start-90)/180);
-        const x2 = 250 + 250 * Math.cos(Math.PI*(end-90)/180);
-        const y2 = 250 + 250 * Math.sin(Math.PI*(end-90)/180);
-        const p = document.createElementNS("http://www.w3.org/2000/svg", "path");
-        p.setAttribute("d", `M 250 250 L ${x1} ${y1} A 250 250 0 0 1 ${x2} ${y2} Z`);
-        p.setAttribute("fill", num===0?"#27ae60":(reds.includes(num)?"#c0392b":"#2c3e50"));
-        p.setAttribute("stroke", "#f1c40f");
-        p.setAttribute("stroke-width", "0.5");
-        svg.appendChild(p);
-
-        const tA = start + sliceA/2;
-        const tx = 250 + 210 * Math.cos(Math.PI*(tA-90)/180);
-        const ty = 250 + 210 * Math.sin(Math.PI*(tA-90)/180);
-        const t = document.createElementNS("http://www.w3.org/2000/svg", "text");
-        t.setAttribute("x", tx); t.setAttribute("y", ty);
-        t.setAttribute("fill", "white"); t.setAttribute("font-size", "22"); t.setAttribute("font-weight", "bold");
-        t.setAttribute("text-anchor", "middle"); t.setAttribute("transform", `rotate(${tA}, ${tx}, ${ty})`);
-        t.textContent = num;
-        svg.appendChild(t);
-    });
-
     function spinWheel() {
         const btn = document.getElementById('spin-btn');
         const ball = document.getElementById('ball');
+        const wheel = document.getElementById('svg-wheel');
+        
         btn.disabled = true;
         document.getElementById('result').innerText = "...";
 
+        // 1. Pehle Result decide karo
         const winIdx = Math.floor(Math.random() * 37);
         const winNum = wheelNumbers[winIdx];
 
-        const targetA = (360 - (winIdx * sliceA)) % 360;
-        const wheelRot = (5 + Math.floor(Math.random()*2)) * 360;
-        currentDeg += wheelRot + (targetA - (currentDeg % 360));
-        svg.style.transform = `rotate(${currentDeg}deg)`;
+        // 2. Wheel Rotation (Clockwise)
+        const sliceA = 360 / 37;
+        const targetWheelA = (360 - (winIdx * sliceA)) % 360;
+        const wheelSpins = (4 + Math.floor(Math.random() * 2)) * 360;
+        currentDeg += wheelSpins + (targetWheelA - (currentDeg % 360));
+        wheel.style.transform = `rotate(${currentDeg}deg)`;
 
+        // 3. Ball Rotation (Anti-Clockwise & Independent)
         ball.style.display = "block";
-        const bRot = -( (7 + Math.floor(Math.random()*2)) * 360 + (360 - targetA) );
+        const ballSpins = (6 + Math.floor(Math.random() * 2)) * 360;
+        
+        // YE HAI MAIN LOGIC: 
+        // Ball ko itna ghumao ki wo wheel ke target angle ke exact opposite land kare
+        const totalBallRot = -(ballSpins + (360 - targetWheelA));
+
         ball.animate([
             { transform: `translate(-50%, -50%) rotate(0deg) translateY(-135px)` },
-            { transform: `translate(-50%, -50%) rotate(${bRot}deg) translateY(-98px)` }
-        ], { duration: 4000, easing: 'cubic-bezier(0.1, 0, 0.1, 1)', fill: 'forwards' });
+            { transform: `translate(-50%, -50%) rotate(${totalBallRot}deg) translateY(-98px)` }
+        ], {
+            duration: 4000,
+            easing: 'cubic-bezier(0.1, 0, 0.1, 1)', // Smooth slow down
+            fill: 'forwards'
+        });
 
         setTimeout(() => {
             updateData(winNum);
@@ -167,22 +55,19 @@
         r.innerText = n;
         r.className = "result-display " + (n===0?'bg-green':(reds.includes(n)?'bg-red':'bg-black'));
         
+        // Percentages & History
         const total = history.length;
         document.getElementById('red-pct').innerText = Math.round((history.filter(x=>reds.includes(x)).length/total)*100) + "%";
         document.getElementById('black-pct').innerText = Math.round((history.filter(x=>x!==0 && !reds.includes(x)).length/total)*100) + "%";
         document.getElementById('total-spins').innerText = total;
 
         const ballHtml = (num) => `<div class="tiny-ball ${num===0?'bg-green':(reds.includes(num)?'bg-red':'bg-black')}">${num}</div>`;
-        
         document.getElementById('history-div').innerHTML = history.slice(0,10).map(ballHtml).join('');
         
-        // LIMIT TO TOP 5
+        // TOP 5 HOT & COLD
         document.getElementById('hot-div').innerHTML = Object.keys(counts).sort((a,b)=>counts[b]-counts[a]).slice(0,5).filter(x=>counts[x]>0).map(x=>ballHtml(parseInt(x))).join('');
-        
         let cold = [];
         for(let i=0; i<=36; i++) if(!history.slice(0,15).includes(i)) cold.push(i);
         document.getElementById('cold-div').innerHTML = cold.slice(0,5).map(ballHtml).join('');
     }
 </script>
-</body>
-</html>
