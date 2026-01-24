@@ -3,94 +3,194 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Roulette Pro Analyzer 2026</title>
+    <title>Roulette Master Pro</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #1a1a1a; color: white; text-align: center; margin: 0; }
-        .container { padding: 20px; }
-        
-        /* Wheel Design */
-        .wheel-container { position: relative; width: 300px; height: 300px; margin: 20px auto; }
-        #wheel { 
-            width: 100%; height: 100%; border-radius: 50%; border: 10px solid #d4af37;
-            background: conic-gradient(#333 0deg, #333); /* Placeholder */
-            transition: transform 4s cubic-bezier(0.1, 0, 0.1, 1);
-            position: relative;
+        body { 
+            background-color: #121212; 
+            color: #ffffff; 
+            font-family: 'Courier New', monospace; 
+            text-align: center; 
+            margin: 0; padding: 20px;
         }
-        .pointer { 
-            position: absolute; top: -20px; left: 50%; transform: translateX(-50%);
-            width: 0; height: 0; border-left: 15px solid transparent;
-            border-right: 15px solid transparent; border-top: 30px solid #d4af37; z-index: 10;
+        .main-card {
+            max-width: 500px;
+            margin: auto;
+            background: #1e1e1e;
+            border: 2px solid #d4af37; /* Gold Border */
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 0 20px rgba(212, 175, 55, 0.3);
+        }
+        h1 { color: #d4af37; margin-bottom: 5px; font-size: 22px; text-transform: uppercase; letter-spacing: 2px; }
+        
+        /* The Big Number Circle */
+        .result-circle {
+            width: 120px; height: 120px;
+            margin: 20px auto;
+            border-radius: 50%;
+            border: 5px solid #444;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 60px; font-weight: bold;
+            background: #000;
+            box-shadow: inset 0 0 20px #000;
+        }
+        .red-bg { background: #c0392b !important; border-color: #e74c3c !important; }
+        .black-bg { background: #2c3e50 !important; border-color: #34495e !important; }
+        .green-bg { background: #27ae60 !important; border-color: #2ecc71 !important; }
+
+        /* Buttons */
+        .spin-btn {
+            background: linear-gradient(45deg, #d4af37, #f1c40f);
+            border: none;
+            padding: 15px 40px;
+            font-size: 20px; font-weight: bold; color: #000;
+            border-radius: 30px; cursor: pointer;
+            width: 100%; margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(212, 175, 55, 0.4);
+        }
+        .spin-btn:active { transform: scale(0.98); }
+
+        /* Stats Grid */
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .stat-box { background: #2a2a2a; padding: 10px; border-radius: 8px; border: 1px solid #444; }
+        .stat-val { font-size: 18px; font-weight: bold; display: block; }
+        .stat-label { font-size: 10px; color: #888; text-transform: uppercase; }
+
+        /* Lists (Hot/Cold) */
+        .section-title { text-align: left; color: #d4af37; font-size: 14px; margin: 15px 0 5px 0; border-bottom: 1px solid #444; padding-bottom: 5px; }
+        .number-list { display: flex; flex-wrap: wrap; gap: 8px; }
+        .badge { 
+            padding: 5px 10px; border-radius: 5px; font-size: 14px; font-weight: bold; 
+            background: #333; border: 1px solid #555;
+        }
+        .hot { color: #ff4d4d; border-color: #ff4d4d; }
+        .cold { color: #3498db; border-color: #3498db; }
+        
+        /* History Bubbles */
+        .history-container { display: flex; gap: 5px; overflow-x: auto; padding-bottom: 10px; margin-top: 10px; }
+        .hist-bubble { 
+            width: 35px; height: 35px; border-radius: 50%; 
+            display: flex; align-items: center; justify-content: center; 
+            font-size: 14px; font-weight: bold; flex-shrink: 0;
+            border: 2px solid rgba(255,255,255,0.2);
         }
 
-        /* Buttons & Inputs */
-        .controls { margin-top: 20px; }
-        button { 
-            padding: 12px 25px; font-size: 18px; cursor: pointer; border-radius: 25px; 
-            border: none; background: #d4af37; color: black; font-weight: bold; margin: 10px;
-        }
-        button:active { transform: scale(0.95); }
-        
-        .stats { background: #2a2a2a; border-radius: 15px; padding: 15px; margin-top: 20px; display: inline-block; min-width: 250px; }
-        .hot-numbers { color: #ff4d4d; font-size: 20px; font-weight: bold; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h2>🎡 Roulette Real-Spin Pro</h2>
+<div class="main-card">
+    <h1>Roulette Pro V2</h1>
     
-    <div class="wheel-container">
-        <div class="pointer"></div>
-        <img id="wheel" src="https://i.imgur.com/v8p0mXp.png" alt="Roulette Wheel">
+    <div id="display" class="result-circle">00</div>
+    
+    <button class="spin-btn" onclick="spin()">SPIN & ANALYZE</button>
+
+    <div class="stats-grid">
+        <div class="stat-box">
+            <span id="red-pct" class="stat-val" style="color:#e74c3c">0%</span>
+            <span class="stat-label">Red</span>
+        </div>
+        <div class="stat-box">
+            <span id="black-pct" class="stat-val" style="color:#3498db">0%</span>
+            <span class="stat-label">Black</span>
+        </div>
+        <div class="stat-box">
+            <span id="total-spins" class="stat-val">0</span>
+            <span class="stat-label">Total</span>
+        </div>
     </div>
 
-    <div class="controls">
-        <button onclick="spinWheel()">SPIN NOW</button>
-        <p id="result-text">Result: --</p>
+    <div class="section-title">🔥 HOT NUMBERS (Most Frequent)</div>
+    <div id="hot-list" class="number-list">
+        <span style="color:#666; font-size:12px;">Spin to see data...</span>
     </div>
 
-    <div class="stats">
-        <h3>Analysis Dashboard</h3>
-        <p>Last 5 Spins: <span id="history">-</span></p>
-        <p>Cold Sector Prediction: <span class="hot-numbers" id="prediction">Enter data to start</span></p>
-    </div>
+    <div class="section-title">❄️ COLD NUMBERS (Not in last 15)</div>
+    <div id="cold-list" class="number-list"></div>
+
+    <div class="section-title">🕒 RECENT HISTORY</div>
+    <div id="history-row" class="history-container"></div>
 </div>
 
 <script>
+    // Config
+    const reds = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36];
     let history = [];
-    const wheel = document.getElementById('wheel');
-    const resultText = document.getElementById('result-text');
-    const historyText = document.getElementById('history');
+    let counts = {};
     
-    // Roulette Numbers in order on the wheel
-    const wheelNumbers = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26];
+    // Initialize 0-36 counts
+    for(let i=0; i<=36; i++) counts[i] = 0;
 
-    function spinWheel() {
-        // Random spin calculation
-        const randomDegree = Math.floor(Math.random() * 360) + 3600; // Multi-spin for effect
-        wheel.style.transform = `rotate(${randomDegree}deg)`;
-        
-        resultText.innerText = "Spinning...";
-
-        setTimeout(() => {
-            const actualDegree = randomDegree % 360;
-            const index = Math.floor((360 - actualDegree) / (360 / 37)) % 37;
-            const winningNumber = wheelNumbers[index];
-            
-            resultText.innerText = "Result: " + winningNumber;
-            updateStats(winningNumber);
-        }, 4000); // Wait for animation
+    function getColor(num) {
+        if (num === 0) return 'green-bg';
+        return reds.includes(num) ? 'red-bg' : 'black-bg';
     }
 
-    function updateStats(num) {
-        history.push(num);
-        if (history.length > 5) history.shift();
-        historyText.innerText = history.join(", ");
+    function spin() {
+        // 1. Generate Number
+        const num = Math.floor(Math.random() * 37);
         
-        // Simple Logic: Predict neighbors of the winning number
-        let nextPrediction = "Sector near " + num;
-        document.getElementById('prediction').innerText = nextPrediction;
+        // 2. Update Data
+        history.unshift(num); // Add to front
+        counts[num]++;
+        
+        // 3. UI Updates
+        updateDisplay(num);
+        updateStats();
+        updateHotCold();
+        updateHistory();
     }
+
+    function updateDisplay(num) {
+        const display = document.getElementById('display');
+        display.innerText = num;
+        display.className = 'result-circle ' + getColor(num);
+        
+        // Flash animation
+        display.style.transform = "scale(1.2)";
+        setTimeout(() => display.style.transform = "scale(1)", 200);
+    }
+
+    function updateStats() {
+        const total = history.length;
+        let redCount = history.filter(n => reds.includes(n)).length;
+        let blackCount = history.filter(n => n!==0 && !reds.includes(n)).length;
+
+        document.getElementById('total-spins').innerText = total;
+        document.getElementById('red-pct').innerText = Math.round((redCount/total)*100) + "%";
+        document.getElementById('black-pct').innerText = Math.round((blackCount/total)*100) + "%";
+    }
+
+    function updateHotCold() {
+        // Hot: Sort by frequency
+        let hot = Object.keys(counts).sort((a,b) => counts[b] - counts[a]).slice(0, 5);
+        // Remove if count is 0
+        hot = hot.filter(n => counts[n] > 0);
+        
+        const hotHTML = hot.map(n => `<span class="badge hot">${n} (${counts[n]})</span>`).join('');
+        document.getElementById('hot-list').innerHTML = hotHTML || '<span style="color:#666">Spin more...</span>';
+
+        // Cold: Not seen in last 15 spins
+        let recent15 = history.slice(0, 15);
+        let cold = [];
+        for(let i=0; i<=36; i++) {
+            if(!recent15.includes(i)) cold.push(i);
+        }
+        // Show first 8 cold numbers
+        const coldHTML = cold.slice(0, 8).map(n => `<span class="badge cold">${n}</span>`).join('');
+        document.getElementById('cold-list').innerHTML = coldHTML;
+    }
+
+    function updateHistory() {
+        const html = history.slice(0, 10).map(n => 
+            `<div class="hist-bubble ${getColor(n)}">${n}</div>`
+        ).join('');
+        document.getElementById('history-row').innerHTML = html;
+    }
+    
+    // Initial render
+    updateHotCold();
 </script>
 
 </body>
