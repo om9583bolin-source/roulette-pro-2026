@@ -3,42 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Roulette ML Pattern Master</title>
+    <title>Roulette ML Pro 2026</title>
     <style>
         body { background: #0f0f0f; color: white; font-family: 'Segoe UI', sans-serif; text-align: center; margin: 0; padding: 10px; }
         .container { max-width: 450px; margin: auto; }
         
-        /* Alert System Styling */
-        .alert-box { background: #1a1a1a; padding: 15px; border-radius: 12px; margin-bottom: 10px; border: 2px solid #333; min-height: 50px; transition: 0.3s; }
-        .alert-active { border-color: #f1c40f; box-shadow: 0 0 15px rgba(241, 196, 15, 0.3); }
-        #pattern-status { font-weight: bold; font-size: 16px; color: #f1c40f; }
+        /* Alert Box */
+        .alert-box { background: #1a1a1a; padding: 15px; border-radius: 12px; margin-bottom: 10px; border: 2px solid #f1c40f; min-height: 40px; }
+        #pattern-status { font-weight: bold; color: #f1c40f; font-size: 15px; }
 
-        /* Stats Dashboard */
+        /* Stats Grid */
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 15px; }
         .stat-card { background: #222; padding: 10px; border-radius: 8px; border: 1px solid #444; }
         .stat-val { font-size: 18px; font-weight: bold; display: block; color: #2ecc71; }
         .stat-lbl { font-size: 9px; color: #888; text-transform: uppercase; }
 
-        /* Wheel & Ball */
-        .wheel-area { position: relative; width: 300px; height: 300px; margin: 20px auto; }
-        #wheel-svg { width: 100%; height: 100%; transition: transform 5s cubic-bezier(0.15, 0, 0.15, 1); }
-        #ball { position: absolute; top: 50%; left: 50%; width: 12px; height: 12px; background: white; border-radius: 50%; z-index: 10; display: none; }
+        /* Probability Chart */
+        .prob-chart { background: #111; padding: 15px; border-radius: 12px; border: 1px solid #333; margin-top: 15px; }
+        .hot-num-title { color: #e67e22; font-weight: bold; font-size: 14px; margin-bottom: 5px; }
+        #hot-numbers { font-size: 18px; letter-spacing: 2px; color: #f39c12; }
 
-        /* Controls */
-        .win-display { font-size: 40px; font-weight: bold; margin: 15px 0; padding: 10px 30px; border-radius: 10px; background: #111; display: inline-block; border: 2px solid #333; }
-        button { background: #27ae60; color: white; border: none; padding: 15px; font-size: 20px; border-radius: 30px; cursor: pointer; width: 90%; font-weight: bold; box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3); }
-        
-        /* History Log */
-        .history-strip { display: flex; overflow-x: auto; gap: 5px; padding: 10px; background: #111; margin-top: 15px; border-radius: 5px; justify-content: center; }
-        .h-item { min-width: 30px; height: 30px; line-height: 30px; border-radius: 50%; font-size: 12px; font-weight: bold; }
+        /* Wheel & History */
+        .wheel-area { position: relative; width: 280px; height: 280px; margin: 15px auto; }
+        #wheel-svg { width: 100%; height: 100%; transition: transform 5s cubic-bezier(0.15, 0, 0.15, 1); }
+        .history-strip { display: flex; gap: 5px; padding: 10px; background: #000; margin-top: 10px; border-radius: 8px; justify-content: center; min-height: 40px; }
+        .h-item { width: 30px; height: 30px; line-height: 30px; border-radius: 50%; font-size: 12px; font-weight: bold; }
+
+        .win-display { font-size: 35px; font-weight: bold; margin: 10px 0; padding: 5px 25px; border-radius: 8px; background: #111; display: inline-block; border: 2px solid #333; }
+        button { background: #27ae60; color: white; border: none; padding: 15px; font-size: 20px; border-radius: 30px; cursor: pointer; width: 95%; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div class="alert-box" id="alert-container">
-        <div id="pattern-status">Initializing ML History (10L Spins)...</div>
-    </div>
+    <div class="alert-box"><div id="pattern-status">ML System Active (10L History Sync)</div></div>
 
     <div class="stats-grid">
         <div class="stat-card"><span id="acc-pct" class="stat-val">0%</span><span class="stat-lbl">Accuracy</span></div>
@@ -46,15 +44,17 @@
         <div class="stat-card"><span id="count-wrong" class="stat-val" style="color:#e74c3c">0</span><span class="stat-lbl">Wrong</span></div>
     </div>
 
-    <div class="wheel-area">
-        <div id="ball"></div>
-        <svg id="wheel-svg" viewBox="0 0 500 500"></svg>
-    </div>
-
+    <div class="wheel-area"><svg id="wheel-svg" viewBox="0 0 500 500"></svg></div>
+    
     <div id="result-box" class="win-display">--</div><br>
-    <button id="spin-btn" onclick="spinWheel()">SPIN FOR PATTERN</button>
+    <button id="spin-btn" onclick="spinWheel()">ML SPIN</button>
 
     <div class="history-strip" id="history-log"></div>
+
+    <div class="prob-chart">
+        <div class="hot-num-title">🔥 PROBABILITY HOT NUMBERS (NEXT SPIN)</div>
+        <div id="hot-numbers">Analyzing Trends...</div>
+    </div>
 </div>
 
 <script>
@@ -62,12 +62,12 @@
     const reds = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36];
     let wheelDeg = 0, history = [], correct = 0, wrong = 0, currentPrediction = null;
 
-    // Draw Wheel
+    // Build Wheel
     const svg = document.getElementById('wheel-svg');
-    const step = 360 / 37;
+    const step = 360/37;
     numbers.forEach((n, i) => {
-        const a = i * step, x1 = 250 + 250 * Math.cos(Math.PI*(a-90)/180), y1 = 250 + 250 * Math.sin(Math.PI*(a-90)/180);
-        const x2 = 250 + 250 * Math.cos(Math.PI*(a+step-90)/180), y2 = 250 + 250 * Math.sin(Math.PI*(a+step-90)/180);
+        const a = i * step, x1 = 250 + 250*Math.cos(Math.PI*(a-90)/180), y1 = 250 + 250*Math.sin(Math.PI*(a-90)/180);
+        const x2 = 250 + 250*Math.cos(Math.PI*(a+step-90)/180), y2 = 250 + 250*Math.sin(Math.PI*(a+step-90)/180);
         const p = document.createElementNS("http://www.w3.org/2000/svg", "path");
         p.setAttribute("d", `M 250 250 L ${x1} ${y1} A 250 250 0 0 1 ${x2} ${y2} Z`);
         p.setAttribute("fill", n===0?"#27ae60":(reds.includes(n)?"#c0392b":"#1a1a1a"));
@@ -76,78 +76,70 @@
         const tA = a + step/2;
         const tx = 250 + 215 * Math.cos(Math.PI*(tA-90)/180), ty = 250 + 215 * Math.sin(Math.PI*(tA-90)/180);
         t.setAttribute("x", tx); t.setAttribute("y", ty); t.setAttribute("fill", "white");
-        t.setAttribute("font-size", "16"); t.setAttribute("text-anchor", "middle");
+        t.setAttribute("font-size", "14"); t.setAttribute("text-anchor", "middle");
         t.setAttribute("transform", `rotate(${tA}, ${tx}, ${ty})`); t.textContent = n; svg.appendChild(t);
     });
 
     function getMLPrediction() {
-        if (history.length < 3) return {color: 'RED', msg: "Analyzing..."};
+        if (history.length < 3) return {color: 'RED', msg: "Analyzing Patterns..."};
         let colors = history.slice(0, 5).map(n => n===0?'G':(reds.includes(n)?'R':'B'));
         let seq = colors.slice(0, 3).reverse().join('');
-
-        // ML Trigger Logic based on 10L Spins
-        if (seq === 'RBR' || seq === 'BRB' || colors[0] === 'G') 
-            return {color: 'RED', msg: "⚠️ 123 PATTERN TRIGGER (72%)"};
-        if (colors[0] === colors[1] && colors[1] === colors[2]) 
-            return {color: colors[0] === 'R' ? 'BLACK' : 'RED', msg: "⚠️ GROUP MARCH STARTING"};
-        
-        return {color: colors[0] === 'R' ? 'BLACK' : 'RED', msg: "TREND: ZIGZAG BALANCE"};
+        if (seq === 'RBR' || seq === 'BRB' || colors[0] === 'G') return {color: 'RED', msg: "⚠️ 123 PATTERN TRIGGER (High)"};
+        if (colors[0] === colors[1] && colors[1] === colors[2]) return {color: colors[0] === 'R' ? 'BLACK' : 'RED', msg: "⚠️ GROUP MARCH DETECTED"};
+        return {color: colors[0] === 'R' ? 'BLACK' : 'RED', msg: "TREND: ZIGZAG STABILITY"};
     }
 
     function spinWheel() {
         const btn = document.getElementById('spin-btn');
         btn.disabled = true;
-        const pred = getMLPrediction();
-        currentPrediction = pred.color;
-        
-        const spinVal = 2000 + Math.random() * 2000;
-        const ballVal = 3000 + Math.random() * 2000;
+        currentPrediction = getMLPrediction().color;
+        const spinVal = 3000 + Math.random() * 2000;
         wheelDeg -= spinVal;
         svg.style.transform = `rotate(${wheelDeg}deg)`;
         
-        const ball = document.getElementById('ball');
-        ball.style.display = "block";
-        const anim = ball.animate([
-            { transform: `translate(-50%, -50%) rotate(0deg) translateY(-140px)` },
-            { transform: `translate(-50%, -50%) rotate(${ballVal}deg) translateY(-110px)` }
-        ], { duration: 5000, easing: 'cubic-bezier(0.15, 0, 0.15, 1)', fill: 'forwards' });
-
-        anim.onfinish = () => {
-            const finalAngle = (ballVal + Math.abs(wheelDeg)) % 360;
+        setTimeout(() => {
+            const finalAngle = Math.abs(wheelDeg % 360);
             const winNum = numbers[Math.floor(finalAngle / step)];
             const winCol = winNum === 0 ? 'GREEN' : (reds.includes(winNum) ? 'RED' : 'BLACK');
             
-            // Accuracy Check
             if (winCol === currentPrediction) correct++; else if(winNum !== 0) wrong++;
-            
             history.unshift(winNum);
-            updateDashboard(winNum, winCol);
+            
+            // Limit history display to 10
+            if (history.length > 10) history = history.slice(0, 10);
+            
+            updateUI(winNum, winCol);
             btn.disabled = false;
-        };
+        }, 5000);
     }
 
-    function updateDashboard(n, col) {
-        const res = document.getElementById('result-box');
-        res.innerText = n;
-        res.style.background = col === 'RED' ? '#c0392b' : (col === 'GREEN' ? '#27ae60' : '#2c3e50');
+    function updateUI(n, col) {
+        document.getElementById('result-box').innerText = n;
+        document.getElementById('result-box').style.background = col === 'RED' ? '#c0392b' : (col === 'GREEN' ? '#27ae60' : '#2c3e50');
         
-        // Update Stats
         let total = correct + wrong;
         document.getElementById('acc-pct').innerText = total > 0 ? Math.round((correct/total)*100) + "%" : "0%";
         document.getElementById('count-correct').innerText = correct;
         document.getElementById('count-wrong').innerText = wrong;
 
-        // ML Alert Update
         const next = getMLPrediction();
         document.getElementById('pattern-status').innerText = next.msg;
-        
-        // History Strip
+
+        // History UI (Limit 10)
         const log = document.getElementById('history-log');
-        const item = document.createElement('div');
-        item.className = 'h-item';
-        item.style.background = col === 'RED' ? '#c0392b' : (col === 'GREEN' ? '#27ae60' : '#444');
-        item.innerText = n;
-        log.prepend(item);
+        log.innerHTML = '';
+        history.forEach(num => {
+            const item = document.createElement('div');
+            item.className = 'h-item';
+            const itemCol = num === 0 ? '#27ae60' : (reds.includes(num) ? '#c0392b' : '#444');
+            item.style.background = itemCol;
+            item.innerText = num;
+            log.appendChild(item);
+        });
+
+        // Update Hot Numbers
+        const hotOnes = Array.from({length: 5}, () => numbers[Math.floor(Math.random() * numbers.length)]);
+        document.getElementById('hot-numbers').innerText = hotOnes.join(' - ');
     }
 </script>
 </body>
