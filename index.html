@@ -3,41 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Roulette ML Anti-Algo Mode</title>
+    <title>Roulette ML Pro Fixed</title>
     <style>
-        body { background: #0b0b0b; color: white; font-family: 'Segoe UI', sans-serif; text-align: center; margin: 0; padding: 10px; }
+        body { background: #0b0b0b; color: white; font-family: 'Segoe UI', sans-serif; text-align: center; margin: 0; padding: 10px; overflow-x: hidden; }
         .container { max-width: 450px; margin: auto; }
         
-        /* Bet Status & Alert Box */
-        .status-panel { background: #1a1a1a; padding: 15px; border-radius: 12px; margin-bottom: 10px; border: 3px solid #333; transition: 0.3s; }
+        .status-panel { background: #1a1a1a; padding: 15px; border-radius: 12px; margin-bottom: 10px; border: 3px solid #333; }
         #bet-result { font-size: 24px; font-weight: bold; margin-bottom: 5px; display: block; }
-        #pattern-alert { font-size: 14px; color: #f1c40f; font-weight: 500; }
+        #prediction-hint { font-size: 16px; color: #3498db; margin-top: 5px; font-weight: bold; }
 
-        /* Stats Grid */
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 15px; }
         .stat-card { background: #222; padding: 10px; border-radius: 8px; border: 1px solid #444; }
         .stat-val { font-size: 18px; font-weight: bold; display: block; color: #2ecc71; }
         .stat-lbl { font-size: 9px; color: #888; text-transform: uppercase; }
 
-        /* Wheel Area */
-        .wheel-box { position: relative; width: 280px; height: 280px; margin: 15px auto; }
-        #wheel-svg { width: 100%; height: 100%; transition: transform 5s cubic-bezier(0.15, 0, 0.15, 1); }
-
-        /* Results & Controls */
-        .win-box { font-size: 35px; font-weight: bold; margin: 10px 0; padding: 5px 25px; border-radius: 8px; background: #111; display: inline-block; border: 2px solid #333; }
-        button { background: #27ae60; color: white; border: none; padding: 15px; font-size: 20px; border-radius: 30px; cursor: pointer; width: 95%; font-weight: bold; }
+        .wheel-box { position: relative; width: 300px; height: 300px; margin: 20px auto; }
+        #wheel-svg { width: 100%; height: 100%; transition: transform 5s cubic-bezier(0.1, 0, 0.1, 1); }
         
-        /* History (Limit 10) */
+        /* Ball Styling Fix */
+        #ball { 
+            position: absolute; width: 14px; height: 14px; background: radial-gradient(circle, #fff, #ccc); 
+            border-radius: 50%; top: 50%; left: 50%; margin: -7px; z-index: 100;
+            box-shadow: 0 0 10px rgba(255,255,255,0.8);
+            transform: translate(-50%, -50%) translateY(-120px);
+            display: block; 
+        }
+
+        .win-box { font-size: 35px; font-weight: bold; margin: 10px 0; padding: 5px 25px; border-radius: 8px; background: #111; display: inline-block; border: 2px solid #333; }
+        button { background: #27ae60; color: white; border: none; padding: 15px; font-size: 20px; border-radius: 30px; cursor: pointer; width: 95%; font-weight: bold; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+        
         .history-bar { display: flex; gap: 5px; padding: 10px; background: #000; margin-top: 10px; border-radius: 8px; justify-content: center; min-height: 40px; }
-        .h-dot { width: 30px; height: 30px; line-height: 30px; border-radius: 50%; font-size: 12px; font-weight: bold; }
+        .h-dot { width: 32px; height: 32px; line-height: 32px; border-radius: 50%; font-size: 13px; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="status-panel" id="status-panel">
-        <span id="bet-result">READY TO ANALYZE</span>
-        <div id="pattern-alert">System Syncing with 10L History...</div>
+        <span id="bet-result">SYSTEM READY</span>
+        <div id="prediction-hint">Analyzing Patterns...</div>
     </div>
 
     <div class="stats-grid">
@@ -46,10 +50,13 @@
         <div class="stat-card"><span id="wrong" class="stat-val" style="color:#e74c3c">0</span><span class="stat-lbl">Failed</span></div>
     </div>
 
-    <div class="wheel-box"><svg id="wheel-svg" viewBox="0 0 500 500"></svg></div>
+    <div class="wheel-box">
+        <div id="ball"></div>
+        <svg id="wheel-svg" viewBox="0 0 500 500"></svg>
+    </div>
     
     <div id="result-num" class="win-box">--</div><br>
-    <button id="spin-btn" onclick="startProSpin()">START ML SPIN</button>
+    <button id="spin-btn" onclick="startProSpin()">SPIN WITH BALL</button>
 
     <div class="history-bar" id="history-bar"></div>
 </div>
@@ -59,7 +66,7 @@
     const reds = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36];
     let deg = 0, history = [], winCount = 0, failCount = 0, nextBet = null;
 
-    // SVG Wheel Generation
+    // Build Wheel
     const svg = document.getElementById('wheel-svg');
     const arc = 360/37;
     numbers.forEach((n, i) => {
@@ -77,78 +84,81 @@
         t.setAttribute("transform", `rotate(${tA}, ${tx}, ${ty})`); t.textContent = n; svg.appendChild(t);
     });
 
-    function getInversionPrediction() {
-        if (history.length < 3) return {color: 'RED', msg: "Analyzing Machine Bias..."};
-        let cols = history.slice(0, 5).map(n => n===0?'G':(reds.includes(n)?'R':'B'));
+    function updatePrediction() {
+        if (history.length < 2) return {color: 'RED', msg: "BET ON RED (Start)"};
+        let last = history[0] === 0 ? 'G' : (reds.includes(history[0]) ? 'R' : 'B');
         
-        // Anti-123 Trigger: If pattern suggests Red, we bet Black (Machine Bias Inversion)
-        if (cols[0] === 'R' && cols[1] === 'B' && cols[2] === 'B') 
-            return {color: 'BLACK', msg: "⚠️ ANTI-123 MODE: Machine likely to break pattern"};
-        
-        // Anti-Streak: Bet against the repeat
-        if (cols[0] === cols[1]) 
-            return {color: cols[0] === 'R' ? 'BLACK' : 'RED', msg: "⚠️ ANTI-STREAK: Bet against color repeat"};
-
-        return {color: Math.random() > 0.5 ? 'RED' : 'BLACK', msg: "ML MODE: Inverted Randomization"};
+        // Anti-Algorithm Logic
+        let predColor = last === 'R' ? 'BLACK' : 'RED';
+        return {color: predColor, msg: `NEXT PREDICTION: ${predColor}`};
     }
 
     function startProSpin() {
         const btn = document.getElementById('spin-btn');
         btn.disabled = true;
-        const predObj = getInversionPrediction();
+        const predObj = updatePrediction();
         nextBet = predObj.color;
-        
-        const move = 3000 + Math.random() * 2000;
-        deg -= move;
+        document.getElementById('prediction-hint').innerText = predObj.msg;
+
+        const ball = document.getElementById('ball');
+        const wheelMove = 2000 + Math.random() * 2000;
+        const ballMove = 3000 + Math.random() * 2000;
+        deg -= wheelMove;
         svg.style.transform = `rotate(${deg}deg)`;
         
+        // Ball Animation
+        ball.animate([
+            { transform: `translate(-50%, -50%) rotate(0deg) translateY(-120px)` },
+            { transform: `translate(-50%, -50%) rotate(${ballMove}deg) translateY(-120px)` }
+        ], { duration: 5000, easing: 'cubic-bezier(0.1, 0, 0.1, 1)', fill: 'forwards' });
+
         setTimeout(() => {
             const final = Math.abs(deg % 360);
             const num = numbers[Math.floor(final / arc)];
             const col = num === 0 ? 'GREEN' : (reds.includes(num) ? 'RED' : 'BLACK');
             
-            // Check if Bet Passed or Failed
             const panel = document.getElementById('status-panel');
-            const resText = document.getElementById('bet-result');
+            const resDisplay = document.getElementById('bet-result');
+            
             if (col === nextBet) {
                 winCount++;
-                resText.innerHTML = "<span style='color:#2ecc71'>BET PASSED ✅</span>";
+                resDisplay.innerHTML = "<span style='color:#2ecc71'>BET PASSED ✅</span>";
                 panel.style.borderColor = "#2ecc71";
             } else {
                 if (num !== 0) failCount++;
-                resText.innerHTML = "<span style='color:#e74c3c'>BET FAILED ❌</span>";
+                resDisplay.innerHTML = "<span style='color:#e74c3c'>BET FAILED ❌</span>";
                 panel.style.borderColor = "#e74c3c";
             }
 
             history.unshift(num);
             if (history.length > 10) history.pop();
-            
-            updateDashboard(num, col);
+            updateUI(num, col);
             btn.disabled = false;
         }, 5000);
     }
 
-    function updateDashboard(n, col) {
+    function updateUI(n, col) {
         document.getElementById('result-num').innerText = n;
         document.getElementById('result-num').style.background = col === 'RED' ? '#c0392b' : (col === 'GREEN' ? '#27ae60' : '#2c3e50');
-        
         let total = winCount + failCount;
         document.getElementById('acc-pct').innerText = total > 0 ? Math.round((winCount/total)*100) + "%" : "0%";
         document.getElementById('correct').innerText = winCount;
         document.getElementById('wrong').innerText = failCount;
 
-        document.getElementById('pattern-alert').innerText = getInversionPrediction().msg;
-
         const log = document.getElementById('history-bar');
         log.innerHTML = '';
-        history.forEach(val => {
-            const dot = document.createElement('div');
-            dot.className = 'h-dot';
-            dot.style.background = val === 0 ? '#27ae60' : (reds.includes(val) ? '#c0392b' : '#333');
-            dot.innerText = val;
-            log.appendChild(dot);
+        history.forEach(v => {
+            const d = document.createElement('div');
+            d.className = 'h-dot';
+            d.style.background = v === 0 ? '#27ae60' : (reds.includes(v) ? '#c0392b' : '#333');
+            d.innerText = v;
+            log.appendChild(d);
         });
+        document.getElementById('prediction-hint').innerText = updatePrediction().msg;
     }
+
+    // Initialize Prediction
+    document.getElementById('prediction-hint').innerText = updatePrediction().msg;
 </script>
 </body>
 </html>
