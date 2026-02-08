@@ -1,70 +1,55 @@
-<!DOCTYPE html>
-<html lang="hi">
-<head>
-    <meta charset="UTF-8">
-    <title>Roulette Pattern Predictor & Simulator</title>
-    <style>
-        body { background: #0f0f0f; color: white; font-family: sans-serif; text-align: center; padding: 20px; }
-        .dashboard { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 25px; }
-        .card { background: #1a1a1a; padding: 20px; border-radius: 12px; border: 1px solid #333; }
-        .val { font-size: 28px; font-weight: bold; display: block; color: #f1c40f; }
-        .lbl { font-size: 11px; color: #888; text-transform: uppercase; margin-top: 5px; }
-        .predictor-box { background: #111; border: 2px dashed #f1c40f; padding: 20px; border-radius: 15px; margin-bottom: 20px; }
-        #next-bet { font-size: 24px; font-weight: bold; color: #2ecc71; }
-        .log { background: #000; height: 250px; overflow-y: scroll; border: 1px solid #444; text-align: left; padding: 15px; font-family: monospace; font-size: 13px; }
-        button { background: #27ae60; color: white; border: none; padding: 15px 40px; font-size: 18px; border-radius: 8px; cursor: pointer; font-weight: bold; margin: 10px; }
-    </style>
-</head>
-<body>
-
-    <div class="predictor-box">
-        <span class="lbl">Pattern Based Prediction</span>
-        <div id="next-bet">Run Simulation to Predict</div>
+<div class="stats-box">
+    <div class="grid-stats">
+        <div class="g-item"><span id="accuracy-pct" class="g-val" style="color:#2ecc71">0%</span><span class="g-lbl">PREDICTION ACCURACY</span></div>
+        <div class="g-item"><span id="correct-preds" class="g-val">0</span><span class="g-lbl">CORRECT</span></div>
+        <div class="g-item"><span id="wrong-preds" class="g-val">0</span><span class="g-lbl">WRONG</span></div>
     </div>
-
-    <div class="dashboard">
-        <div class="card"><span id="match-123" class="val">0</span><span class="lbl">123 Pattern Found</span></div>
-        <div class="card"><span id="match-march" class="val">0</span><span class="lbl">Group March Found</span></div>
-    </div>
-
-    <button onclick="runPredictiveTest()">Start 1000 Spins Test</button>
-
-    <div class="log" id="log-box">Details will appear here...</div>
+    <div id="prediction-log" style="font-size: 12px; color: #f1c40f; margin-top: 5px;">Waiting for first spin...</div>
+</div>
 
 <script>
-    const numbers = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26];
-    const reds = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36];
+    let correctCount = 0;
+    let wrongCount = 0;
+    let lastPrediction = null;
 
-    function runPredictiveTest() {
-        let history = [];
-        let count123 = 0, countMarch = 0;
-        const log = document.getElementById('log-box');
-        log.innerHTML = "<b>Analyzing 1000 spins...</b><br>";
+    function getPrediction() {
+        if (history.length < 3) return null;
+        
+        let last3 = history.slice(0, 3).reverse().join(''); // Last 3 results color sequence
+        // R = Red, B = Black
+        let seq = history.slice(0, 3).map(n => reds.includes(n) ? 'R' : 'B').reverse().join('');
 
-        for(let i=0; i < 1000; i++) {
-            let n = numbers[Math.floor(Math.random() * numbers.length)];
-            let color = n === 0 ? 'G' : (reds.includes(n) ? 'R' : 'B');
-            history.push(color);
+        if (seq === 'RBB') return 'RED'; // Expecting 123 pattern continuation
+        if (seq === 'RRB') return 'BLACK'; // Expecting Group March switch
+        if (seq === 'RBR') return 'BLACK'; // Expecting Zigzag
+        return Math.random() > 0.5 ? 'RED' : 'BLACK'; // Random if no pattern
+    }
 
-            // Pattern Checks
-            if (history.length >= 4 && history.slice(-4).join('') === 'RRBB') countMarch++;
-            if (history.length >= 6 && history.slice(-6).join('') === 'RBBRRR') count123++;
+    // Isse executeSpin() ke onfinish ke andar updateData() se pehle bulayein
+    function checkAccuracy(currentWinNum) {
+        if (lastPrediction === null) {
+            lastPrediction = getPrediction();
+            return;
         }
 
-        // Prediction Logic (Simplified)
-        let last3 = history.slice(-3).join('');
-        let prediction = "No Clear Trend";
+        let actualColor = reds.includes(currentWinNum) ? 'RED' : (currentWinNum === 0 ? 'ZERO' : 'BLACK');
         
-        if(last3 === 'RBB') prediction = "High Chance of 123 (Bet RED)";
-        else if(last3 === 'RRB') prediction = "High Chance of Group March (Bet BLACK)";
-        else if(last3 === 'RBR') prediction = "High Chance of Zigzag (Bet BLACK)";
-        else prediction = "Stable Randomness (Follow Next Color)";
+        if (actualColor === lastPrediction) {
+            correctCount++;
+            document.getElementById('prediction-log').innerText = `✅ Last Prediction (${lastPrediction}) was CORRECT!`;
+        } else {
+            wrongCount++;
+            document.getElementById('prediction-log').innerText = `❌ Last Prediction (${lastPrediction}) was WRONG (Landed: ${actualColor})`;
+        }
 
-        document.getElementById('next-bet').innerText = prediction;
-        document.getElementById('match-123').innerText = count123;
-        document.getElementById('match-march').innerText = countMarch;
-        log.innerHTML += "Done. <br>Based on the last spin, the algorithm recommends: " + prediction;
+        // Update UI
+        let totalPreds = correctCount + wrongCount;
+        let accuracy = Math.round((correctCount / totalPreds) * 100);
+        document.getElementById('accuracy-pct').innerText = accuracy + "%";
+        document.getElementById('correct-preds').innerText = correctCount;
+        document.getElementById('wrong-preds').innerText = wrongCount;
+
+        // Set next prediction
+        lastPrediction = getPrediction();
     }
 </script>
-</body>
-</html>
