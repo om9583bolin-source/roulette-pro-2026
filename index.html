@@ -3,14 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Roulette ML Pro 2026</title>
+    <title>Roulette ML Anti-Algo Mode</title>
     <style>
-        body { background: #0f0f0f; color: white; font-family: 'Segoe UI', sans-serif; text-align: center; margin: 0; padding: 10px; }
+        body { background: #0b0b0b; color: white; font-family: 'Segoe UI', sans-serif; text-align: center; margin: 0; padding: 10px; }
         .container { max-width: 450px; margin: auto; }
         
-        /* Alert Box */
-        .alert-box { background: #1a1a1a; padding: 15px; border-radius: 12px; margin-bottom: 10px; border: 2px solid #f1c40f; min-height: 40px; }
-        #pattern-status { font-weight: bold; color: #f1c40f; font-size: 15px; }
+        /* Bet Status & Alert Box */
+        .status-panel { background: #1a1a1a; padding: 15px; border-radius: 12px; margin-bottom: 10px; border: 3px solid #333; transition: 0.3s; }
+        #bet-result { font-size: 24px; font-weight: bold; margin-bottom: 5px; display: block; }
+        #pattern-alert { font-size: 14px; color: #f1c40f; font-weight: 500; }
 
         /* Stats Grid */
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 15px; }
@@ -18,128 +19,135 @@
         .stat-val { font-size: 18px; font-weight: bold; display: block; color: #2ecc71; }
         .stat-lbl { font-size: 9px; color: #888; text-transform: uppercase; }
 
-        /* Probability Chart */
-        .prob-chart { background: #111; padding: 15px; border-radius: 12px; border: 1px solid #333; margin-top: 15px; }
-        .hot-num-title { color: #e67e22; font-weight: bold; font-size: 14px; margin-bottom: 5px; }
-        #hot-numbers { font-size: 18px; letter-spacing: 2px; color: #f39c12; }
-
-        /* Wheel & History */
-        .wheel-area { position: relative; width: 280px; height: 280px; margin: 15px auto; }
+        /* Wheel Area */
+        .wheel-box { position: relative; width: 280px; height: 280px; margin: 15px auto; }
         #wheel-svg { width: 100%; height: 100%; transition: transform 5s cubic-bezier(0.15, 0, 0.15, 1); }
-        .history-strip { display: flex; gap: 5px; padding: 10px; background: #000; margin-top: 10px; border-radius: 8px; justify-content: center; min-height: 40px; }
-        .h-item { width: 30px; height: 30px; line-height: 30px; border-radius: 50%; font-size: 12px; font-weight: bold; }
 
-        .win-display { font-size: 35px; font-weight: bold; margin: 10px 0; padding: 5px 25px; border-radius: 8px; background: #111; display: inline-block; border: 2px solid #333; }
+        /* Results & Controls */
+        .win-box { font-size: 35px; font-weight: bold; margin: 10px 0; padding: 5px 25px; border-radius: 8px; background: #111; display: inline-block; border: 2px solid #333; }
         button { background: #27ae60; color: white; border: none; padding: 15px; font-size: 20px; border-radius: 30px; cursor: pointer; width: 95%; font-weight: bold; }
+        
+        /* History (Limit 10) */
+        .history-bar { display: flex; gap: 5px; padding: 10px; background: #000; margin-top: 10px; border-radius: 8px; justify-content: center; min-height: 40px; }
+        .h-dot { width: 30px; height: 30px; line-height: 30px; border-radius: 50%; font-size: 12px; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div class="alert-box"><div id="pattern-status">ML System Active (10L History Sync)</div></div>
+    <div class="status-panel" id="status-panel">
+        <span id="bet-result">READY TO ANALYZE</span>
+        <div id="pattern-alert">System Syncing with 10L History...</div>
+    </div>
 
     <div class="stats-grid">
         <div class="stat-card"><span id="acc-pct" class="stat-val">0%</span><span class="stat-lbl">Accuracy</span></div>
-        <div class="stat-card"><span id="count-correct" class="stat-val">0</span><span class="stat-lbl">Correct</span></div>
-        <div class="stat-card"><span id="count-wrong" class="stat-val" style="color:#e74c3c">0</span><span class="stat-lbl">Wrong</span></div>
+        <div class="stat-card"><span id="correct" class="stat-val">0</span><span class="stat-lbl">Passed</span></div>
+        <div class="stat-card"><span id="wrong" class="stat-val" style="color:#e74c3c">0</span><span class="stat-lbl">Failed</span></div>
     </div>
 
-    <div class="wheel-area"><svg id="wheel-svg" viewBox="0 0 500 500"></svg></div>
+    <div class="wheel-box"><svg id="wheel-svg" viewBox="0 0 500 500"></svg></div>
     
-    <div id="result-box" class="win-display">--</div><br>
-    <button id="spin-btn" onclick="spinWheel()">ML SPIN</button>
+    <div id="result-num" class="win-box">--</div><br>
+    <button id="spin-btn" onclick="startProSpin()">START ML SPIN</button>
 
-    <div class="history-strip" id="history-log"></div>
-
-    <div class="prob-chart">
-        <div class="hot-num-title">🔥 PROBABILITY HOT NUMBERS (NEXT SPIN)</div>
-        <div id="hot-numbers">Analyzing Trends...</div>
-    </div>
+    <div class="history-bar" id="history-bar"></div>
 </div>
 
 <script>
     const numbers = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26];
     const reds = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36];
-    let wheelDeg = 0, history = [], correct = 0, wrong = 0, currentPrediction = null;
+    let deg = 0, history = [], winCount = 0, failCount = 0, nextBet = null;
 
-    // Build Wheel
+    // SVG Wheel Generation
     const svg = document.getElementById('wheel-svg');
-    const step = 360/37;
+    const arc = 360/37;
     numbers.forEach((n, i) => {
-        const a = i * step, x1 = 250 + 250*Math.cos(Math.PI*(a-90)/180), y1 = 250 + 250*Math.sin(Math.PI*(a-90)/180);
-        const x2 = 250 + 250*Math.cos(Math.PI*(a+step-90)/180), y2 = 250 + 250*Math.sin(Math.PI*(a+step-90)/180);
+        const a = i * arc, x1 = 250 + 250*Math.cos(Math.PI*(a-90)/180), y1 = 250 + 250*Math.sin(Math.PI*(a-90)/180);
+        const x2 = 250 + 250*Math.cos(Math.PI*(a+arc-90)/180), y2 = 250 + 250*Math.sin(Math.PI*(a+arc-90)/180);
         const p = document.createElementNS("http://www.w3.org/2000/svg", "path");
         p.setAttribute("d", `M 250 250 L ${x1} ${y1} A 250 250 0 0 1 ${x2} ${y2} Z`);
         p.setAttribute("fill", n===0?"#27ae60":(reds.includes(n)?"#c0392b":"#1a1a1a"));
-        p.setAttribute("stroke", "#444"); svg.appendChild(p);
+        p.setAttribute("stroke", "#333"); svg.appendChild(p);
         const t = document.createElementNS("http://www.w3.org/2000/svg", "text");
-        const tA = a + step/2;
-        const tx = 250 + 215 * Math.cos(Math.PI*(tA-90)/180), ty = 250 + 215 * Math.sin(Math.PI*(tA-90)/180);
+        const tA = a + arc/2;
+        const tx = 250 + 220 * Math.cos(Math.PI*(tA-90)/180), ty = 250 + 220 * Math.sin(Math.PI*(tA-90)/180);
         t.setAttribute("x", tx); t.setAttribute("y", ty); t.setAttribute("fill", "white");
         t.setAttribute("font-size", "14"); t.setAttribute("text-anchor", "middle");
         t.setAttribute("transform", `rotate(${tA}, ${tx}, ${ty})`); t.textContent = n; svg.appendChild(t);
     });
 
-    function getMLPrediction() {
-        if (history.length < 3) return {color: 'RED', msg: "Analyzing Patterns..."};
-        let colors = history.slice(0, 5).map(n => n===0?'G':(reds.includes(n)?'R':'B'));
-        let seq = colors.slice(0, 3).reverse().join('');
-        if (seq === 'RBR' || seq === 'BRB' || colors[0] === 'G') return {color: 'RED', msg: "⚠️ 123 PATTERN TRIGGER (High)"};
-        if (colors[0] === colors[1] && colors[1] === colors[2]) return {color: colors[0] === 'R' ? 'BLACK' : 'RED', msg: "⚠️ GROUP MARCH DETECTED"};
-        return {color: colors[0] === 'R' ? 'BLACK' : 'RED', msg: "TREND: ZIGZAG STABILITY"};
+    function getInversionPrediction() {
+        if (history.length < 3) return {color: 'RED', msg: "Analyzing Machine Bias..."};
+        let cols = history.slice(0, 5).map(n => n===0?'G':(reds.includes(n)?'R':'B'));
+        
+        // Anti-123 Trigger: If pattern suggests Red, we bet Black (Machine Bias Inversion)
+        if (cols[0] === 'R' && cols[1] === 'B' && cols[2] === 'B') 
+            return {color: 'BLACK', msg: "⚠️ ANTI-123 MODE: Machine likely to break pattern"};
+        
+        // Anti-Streak: Bet against the repeat
+        if (cols[0] === cols[1]) 
+            return {color: cols[0] === 'R' ? 'BLACK' : 'RED', msg: "⚠️ ANTI-STREAK: Bet against color repeat"};
+
+        return {color: Math.random() > 0.5 ? 'RED' : 'BLACK', msg: "ML MODE: Inverted Randomization"};
     }
 
-    function spinWheel() {
+    function startProSpin() {
         const btn = document.getElementById('spin-btn');
         btn.disabled = true;
-        currentPrediction = getMLPrediction().color;
-        const spinVal = 3000 + Math.random() * 2000;
-        wheelDeg -= spinVal;
-        svg.style.transform = `rotate(${wheelDeg}deg)`;
+        const predObj = getInversionPrediction();
+        nextBet = predObj.color;
+        
+        const move = 3000 + Math.random() * 2000;
+        deg -= move;
+        svg.style.transform = `rotate(${deg}deg)`;
         
         setTimeout(() => {
-            const finalAngle = Math.abs(wheelDeg % 360);
-            const winNum = numbers[Math.floor(finalAngle / step)];
-            const winCol = winNum === 0 ? 'GREEN' : (reds.includes(winNum) ? 'RED' : 'BLACK');
+            const final = Math.abs(deg % 360);
+            const num = numbers[Math.floor(final / arc)];
+            const col = num === 0 ? 'GREEN' : (reds.includes(num) ? 'RED' : 'BLACK');
             
-            if (winCol === currentPrediction) correct++; else if(winNum !== 0) wrong++;
-            history.unshift(winNum);
+            // Check if Bet Passed or Failed
+            const panel = document.getElementById('status-panel');
+            const resText = document.getElementById('bet-result');
+            if (col === nextBet) {
+                winCount++;
+                resText.innerHTML = "<span style='color:#2ecc71'>BET PASSED ✅</span>";
+                panel.style.borderColor = "#2ecc71";
+            } else {
+                if (num !== 0) failCount++;
+                resText.innerHTML = "<span style='color:#e74c3c'>BET FAILED ❌</span>";
+                panel.style.borderColor = "#e74c3c";
+            }
+
+            history.unshift(num);
+            if (history.length > 10) history.pop();
             
-            // Limit history display to 10
-            if (history.length > 10) history = history.slice(0, 10);
-            
-            updateUI(winNum, winCol);
+            updateDashboard(num, col);
             btn.disabled = false;
         }, 5000);
     }
 
-    function updateUI(n, col) {
-        document.getElementById('result-box').innerText = n;
-        document.getElementById('result-box').style.background = col === 'RED' ? '#c0392b' : (col === 'GREEN' ? '#27ae60' : '#2c3e50');
+    function updateDashboard(n, col) {
+        document.getElementById('result-num').innerText = n;
+        document.getElementById('result-num').style.background = col === 'RED' ? '#c0392b' : (col === 'GREEN' ? '#27ae60' : '#2c3e50');
         
-        let total = correct + wrong;
-        document.getElementById('acc-pct').innerText = total > 0 ? Math.round((correct/total)*100) + "%" : "0%";
-        document.getElementById('count-correct').innerText = correct;
-        document.getElementById('count-wrong').innerText = wrong;
+        let total = winCount + failCount;
+        document.getElementById('acc-pct').innerText = total > 0 ? Math.round((winCount/total)*100) + "%" : "0%";
+        document.getElementById('correct').innerText = winCount;
+        document.getElementById('wrong').innerText = failCount;
 
-        const next = getMLPrediction();
-        document.getElementById('pattern-status').innerText = next.msg;
+        document.getElementById('pattern-alert').innerText = getInversionPrediction().msg;
 
-        // History UI (Limit 10)
-        const log = document.getElementById('history-log');
+        const log = document.getElementById('history-bar');
         log.innerHTML = '';
-        history.forEach(num => {
-            const item = document.createElement('div');
-            item.className = 'h-item';
-            const itemCol = num === 0 ? '#27ae60' : (reds.includes(num) ? '#c0392b' : '#444');
-            item.style.background = itemCol;
-            item.innerText = num;
-            log.appendChild(item);
+        history.forEach(val => {
+            const dot = document.createElement('div');
+            dot.className = 'h-dot';
+            dot.style.background = val === 0 ? '#27ae60' : (reds.includes(val) ? '#c0392b' : '#333');
+            dot.innerText = val;
+            log.appendChild(dot);
         });
-
-        // Update Hot Numbers
-        const hotOnes = Array.from({length: 5}, () => numbers[Math.floor(Math.random() * numbers.length)]);
-        document.getElementById('hot-numbers').innerText = hotOnes.join(' - ');
     }
 </script>
 </body>
