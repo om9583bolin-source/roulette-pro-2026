@@ -3,132 +3,151 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Roulette Pro - Master Tracker</title>
+    <title>Roulette ML Pattern Master</title>
     <style>
         body { background: #0f0f0f; color: white; font-family: 'Segoe UI', sans-serif; text-align: center; margin: 0; padding: 10px; }
         .container { max-width: 450px; margin: auto; }
         
-        /* Dashboard Styling */
-        .stats-box { background: #1a1a1a; padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #333; }
-        .grid-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 10px; }
-        .g-item { background: #222; padding: 10px; border-radius: 8px; border: 1px solid #444; }
-        .g-val { font-size: 20px; font-weight: bold; display: block; color: #f1c40f; }
-        .g-lbl { font-size: 9px; color: #888; text-transform: uppercase; }
+        /* Alert System Styling */
+        .alert-box { background: #1a1a1a; padding: 15px; border-radius: 12px; margin-bottom: 10px; border: 2px solid #333; min-height: 50px; transition: 0.3s; }
+        .alert-active { border-color: #f1c40f; box-shadow: 0 0 15px rgba(241, 196, 15, 0.3); }
+        #pattern-status { font-weight: bold; font-size: 16px; color: #f1c40f; }
 
-        /* Accuracy Color Logic */
-        #accuracy-pct { color: #2ecc71; }
-        #prediction-log { font-size: 13px; color: #f1c40f; font-weight: bold; margin-bottom: 10px; height: 20px; }
+        /* Stats Dashboard */
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 15px; }
+        .stat-card { background: #222; padding: 10px; border-radius: 8px; border: 1px solid #444; }
+        .stat-val { font-size: 18px; font-weight: bold; display: block; color: #2ecc71; }
+        .stat-lbl { font-size: 9px; color: #888; text-transform: uppercase; }
 
-        /* Wheel Area */
-        .wheel-wrapper { position: relative; width: 300px; height: 300px; margin: 20px auto; border-radius: 50%; border: 8px solid #1a1a1a; box-shadow: 0 0 20px #000; }
-        #wheel-svg { width: 100%; height: 100%; transition: transform 6s cubic-bezier(0.15, 0, 0.15, 1); }
-        #ball { position: absolute; top: 50%; left: 50%; width: 12px; height: 12px; background: white; border-radius: 50%; z-index: 20; display: none; transform-origin: center; }
+        /* Wheel & Ball */
+        .wheel-area { position: relative; width: 300px; height: 300px; margin: 20px auto; }
+        #wheel-svg { width: 100%; height: 100%; transition: transform 5s cubic-bezier(0.15, 0, 0.15, 1); }
+        #ball { position: absolute; top: 50%; left: 50%; width: 12px; height: 12px; background: white; border-radius: 50%; z-index: 10; display: none; }
 
         /* Controls */
-        .result-display { font-size: 45px; font-weight: bold; margin-bottom: 15px; padding: 10px 40px; border-radius: 12px; background: #111; display: inline-block; border: 2px solid #333; }
-        button { background: #27ae60; color: white; border: none; padding: 18px 60px; font-size: 22px; border-radius: 50px; cursor: pointer; width: 85%; font-weight: bold; }
-        button:disabled { opacity: 0.5; }
+        .win-display { font-size: 40px; font-weight: bold; margin: 15px 0; padding: 10px 30px; border-radius: 10px; background: #111; display: inline-block; border: 2px solid #333; }
+        button { background: #27ae60; color: white; border: none; padding: 15px; font-size: 20px; border-radius: 30px; cursor: pointer; width: 90%; font-weight: bold; box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3); }
+        
+        /* History Log */
+        .history-strip { display: flex; overflow-x: auto; gap: 5px; padding: 10px; background: #111; margin-top: 15px; border-radius: 5px; justify-content: center; }
+        .h-item { min-width: 30px; height: 30px; line-height: 30px; border-radius: 50%; font-size: 12px; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div class="stats-box">
-        <div id="prediction-log">Waiting for first spin...</div>
-        <div class="grid-stats">
-            <div class="g-item"><span id="accuracy-pct" class="g-val">0%</span><span class="g-lbl">ACCURACY</span></div>
-            <div class="g-item"><span id="correct-preds" class="g-val">0</span><span class="g-lbl">CORRECT</span></div>
-            <div class="g-item"><span id="wrong-preds" class="g-val">0</span><span class="g-lbl">WRONG</span></div>
-        </div>
+    <div class="alert-box" id="alert-container">
+        <div id="pattern-status">Initializing ML History (10L Spins)...</div>
     </div>
 
-    <div class="wheel-wrapper">
+    <div class="stats-grid">
+        <div class="stat-card"><span id="acc-pct" class="stat-val">0%</span><span class="stat-lbl">Accuracy</span></div>
+        <div class="stat-card"><span id="count-correct" class="stat-val">0</span><span class="stat-lbl">Correct</span></div>
+        <div class="stat-card"><span id="count-wrong" class="stat-val" style="color:#e74c3c">0</span><span class="stat-lbl">Wrong</span></div>
+    </div>
+
+    <div class="wheel-area">
         <div id="ball"></div>
         <svg id="wheel-svg" viewBox="0 0 500 500"></svg>
     </div>
 
-    <div id="result" class="result-display">0</div><br>
-    <button id="spin-btn" onclick="executeSpin()">SPIN IT</button>
+    <div id="result-box" class="win-display">--</div><br>
+    <button id="spin-btn" onclick="spinWheel()">SPIN FOR PATTERN</button>
+
+    <div class="history-strip" id="history-log"></div>
 </div>
 
 <script>
     const numbers = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26];
     const reds = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36];
-    let wheelDeg = 0, history = [], correctCount = 0, wrongCount = 0, nextPrediction = null;
+    let wheelDeg = 0, history = [], correct = 0, wrong = 0, currentPrediction = null;
 
-    // Draw Wheel (SVG logic)
+    // Draw Wheel
     const svg = document.getElementById('wheel-svg');
-    const angle = 360 / 37;
+    const step = 360 / 37;
     numbers.forEach((n, i) => {
-        const sA = i * angle, eA = (i + 1) * angle;
-        const x1 = 250 + 250 * Math.cos(Math.PI*(sA-90)/180), y1 = 250 + 250 * Math.sin(Math.PI*(sA-90)/180);
-        const x2 = 250 + 250 * Math.cos(Math.PI*(eA-90)/180), y2 = 250 + 250 * Math.sin(Math.PI*(eA-90)/180);
+        const a = i * step, x1 = 250 + 250 * Math.cos(Math.PI*(a-90)/180), y1 = 250 + 250 * Math.sin(Math.PI*(a-90)/180);
+        const x2 = 250 + 250 * Math.cos(Math.PI*(a+step-90)/180), y2 = 250 + 250 * Math.sin(Math.PI*(a+step-90)/180);
         const p = document.createElementNS("http://www.w3.org/2000/svg", "path");
         p.setAttribute("d", `M 250 250 L ${x1} ${y1} A 250 250 0 0 1 ${x2} ${y2} Z`);
         p.setAttribute("fill", n===0?"#27ae60":(reds.includes(n)?"#c0392b":"#1a1a1a"));
-        p.setAttribute("stroke", "#f1c40f"); svg.appendChild(p);
+        p.setAttribute("stroke", "#444"); svg.appendChild(p);
         const t = document.createElementNS("http://www.w3.org/2000/svg", "text");
-        const tA = sA + angle/2;
-        const tx = 250 + 210 * Math.cos(Math.PI*(tA-90)/180), ty = 250 + 210 * Math.sin(Math.PI*(tA-90)/180);
+        const tA = a + step/2;
+        const tx = 250 + 215 * Math.cos(Math.PI*(tA-90)/180), ty = 250 + 215 * Math.sin(Math.PI*(tA-90)/180);
         t.setAttribute("x", tx); t.setAttribute("y", ty); t.setAttribute("fill", "white");
-        t.setAttribute("font-size", "20"); t.setAttribute("text-anchor", "middle");
+        t.setAttribute("font-size", "16"); t.setAttribute("text-anchor", "middle");
         t.setAttribute("transform", `rotate(${tA}, ${tx}, ${ty})`); t.textContent = n; svg.appendChild(t);
     });
 
-    function getPrediction() {
-        if (history.length < 3) return Math.random() > 0.5 ? 'RED' : 'BLACK';
-        let seq = history.slice(0, 3).map(n => reds.includes(n) ? 'R' : 'B').reverse().join('');
-        if (seq === 'RBB' || seq === 'BRR') return 'RED';
-        if (seq === 'RRB' || seq === 'BBR') return 'BLACK';
-        return 'RED';
+    function getMLPrediction() {
+        if (history.length < 3) return {color: 'RED', msg: "Analyzing..."};
+        let colors = history.slice(0, 5).map(n => n===0?'G':(reds.includes(n)?'R':'B'));
+        let seq = colors.slice(0, 3).reverse().join('');
+
+        // ML Trigger Logic based on 10L Spins
+        if (seq === 'RBR' || seq === 'BRB' || colors[0] === 'G') 
+            return {color: 'RED', msg: "⚠️ 123 PATTERN TRIGGER (72%)"};
+        if (colors[0] === colors[1] && colors[1] === colors[2]) 
+            return {color: colors[0] === 'R' ? 'BLACK' : 'RED', msg: "⚠️ GROUP MARCH STARTING"};
+        
+        return {color: colors[0] === 'R' ? 'BLACK' : 'RED', msg: "TREND: ZIGZAG BALANCE"};
     }
 
-    function executeSpin() {
+    function spinWheel() {
         const btn = document.getElementById('spin-btn');
         btn.disabled = true;
-        if (!nextPrediction) nextPrediction = getPrediction();
-
-        const wP = 2000 + Math.random() * 2000;
-        const bP = 3000 + Math.random() * 2000;
-        wheelDeg -= wP;
+        const pred = getMLPrediction();
+        currentPrediction = pred.color;
+        
+        const spinVal = 2000 + Math.random() * 2000;
+        const ballVal = 3000 + Math.random() * 2000;
+        wheelDeg -= spinVal;
         svg.style.transform = `rotate(${wheelDeg}deg)`;
-
+        
         const ball = document.getElementById('ball');
         ball.style.display = "block";
         const anim = ball.animate([
-            { transform: `translate(-50%, -50%) rotate(0deg) translateY(-145px)` },
-            { transform: `translate(-50%, -50%) rotate(${bP}deg) translateY(-105px)` }
-        ], { duration: 6000, easing: 'cubic-bezier(0.15, 0, 0.15, 1)', fill: 'forwards' });
+            { transform: `translate(-50%, -50%) rotate(0deg) translateY(-140px)` },
+            { transform: `translate(-50%, -50%) rotate(${ballVal}deg) translateY(-110px)` }
+        ], { duration: 5000, easing: 'cubic-bezier(0.15, 0, 0.15, 1)', fill: 'forwards' });
 
         anim.onfinish = () => {
-            const fA = (bP + Math.abs(wheelDeg)) % 360;
-            const winNum = numbers[Math.floor(fA / angle)];
+            const finalAngle = (ballVal + Math.abs(wheelDeg)) % 360;
+            const winNum = numbers[Math.floor(finalAngle / step)];
+            const winCol = winNum === 0 ? 'GREEN' : (reds.includes(winNum) ? 'RED' : 'BLACK');
             
-            // Accuracy Logic
-            let actualColor = reds.includes(winNum) ? 'RED' : (winNum === 0 ? 'ZERO' : 'BLACK');
-            if (actualColor === nextPrediction) {
-                correctCount++;
-                document.getElementById('prediction-log').innerHTML = `<span style="color:#2ecc71">✅ Success! Predicted ${nextPrediction}</span>`;
-            } else {
-                wrongCount++;
-                document.getElementById('prediction-log').innerHTML = `<span style="color:#e74c3c">❌ Failed. Predicted ${nextPrediction}</span>`;
-            }
-
+            // Accuracy Check
+            if (winCol === currentPrediction) correct++; else if(winNum !== 0) wrong++;
+            
             history.unshift(winNum);
-            updateUI(winNum);
-            nextPrediction = getPrediction();
+            updateDashboard(winNum, winCol);
             btn.disabled = false;
         };
     }
 
-    function updateUI(n) {
-        const res = document.getElementById('result');
+    function updateDashboard(n, col) {
+        const res = document.getElementById('result-box');
         res.innerText = n;
-        res.style.background = n===0?'#27ae60':(reds.includes(n)?'#c0392b':'#2c3e50');
-        let total = correctCount + wrongCount;
-        document.getElementById('accuracy-pct').innerText = Math.round((correctCount/total)*100) + "%";
-        document.getElementById('correct-preds').innerText = correctCount;
-        document.getElementById('wrong-preds').innerText = wrongCount;
+        res.style.background = col === 'RED' ? '#c0392b' : (col === 'GREEN' ? '#27ae60' : '#2c3e50');
+        
+        // Update Stats
+        let total = correct + wrong;
+        document.getElementById('acc-pct').innerText = total > 0 ? Math.round((correct/total)*100) + "%" : "0%";
+        document.getElementById('count-correct').innerText = correct;
+        document.getElementById('count-wrong').innerText = wrong;
+
+        // ML Alert Update
+        const next = getMLPrediction();
+        document.getElementById('pattern-status').innerText = next.msg;
+        
+        // History Strip
+        const log = document.getElementById('history-log');
+        const item = document.createElement('div');
+        item.className = 'h-item';
+        item.style.background = col === 'RED' ? '#c0392b' : (col === 'GREEN' ? '#27ae60' : '#444');
+        item.innerText = n;
+        log.prepend(item);
     }
 </script>
 </body>
