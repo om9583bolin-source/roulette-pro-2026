@@ -3,106 +3,117 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Advanced Roulette Pattern Analyzer</title>
+    <title>RPA Pro - Sequence Predictor</title>
     <style>
-        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #1a1a1a; color: #fff; padding: 20px; }
-        .container { max-width: 1200px; margin: 0 auto; background: #2d2d2d; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
-        h1 { color: #4db8ff; text-align: center; }
-        textarea { width: 100%; height: 120px; background: #3d3d3d; color: #fff; border: 1px solid #555; border-radius: 8px; padding: 10px; box-sizing: border-box; font-size: 16px; }
-        button { width: 100%; background: #008cba; color: white; padding: 15px; border: none; border-radius: 8px; cursor: pointer; font-size: 18px; margin-top: 15px; transition: 0.3s; }
-        button:hover { background: #005f7a; }
-        .results { margin-top: 30px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; background: #333; }
-        th, td { padding: 12px; text-align: center; border: 1px solid #444; }
-        th { background: #4db8ff; color: #000; }
-        .number-badge { padding: 4px 8px; border-radius: 4px; font-weight: bold; margin: 2px; display: inline-block; }
-        .red { background: #e74c3c; }
-        .black { background: #000; color: #fff; border: 1px solid #555; }
-        .green { background: #27ae60; }
-        .rank-best { background: rgba(39, 174, 96, 0.2); border: 2px solid #27ae60; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #121212; color: #e0e0e0; padding: 20px; margin: 0; }
+        .container { max-width: 1000px; margin: 0 auto; background: #1e1e1e; padding: 30px; border-radius: 15px; box-shadow: 0 8px 32px rgba(0,0,0,0.8); border: 1px solid #333; }
+        h1 { color: #00e5ff; text-align: center; text-transform: uppercase; letter-spacing: 2px; }
+        .input-section { margin-bottom: 25px; }
+        textarea { width: 100%; height: 150px; background: #252525; color: #00ff41; border: 2px solid #444; border-radius: 10px; padding: 15px; box-sizing: border-box; font-family: 'Courier New', monospace; font-size: 16px; outline: none; }
+        textarea:focus { border-color: #00e5ff; }
+        .btn-group { display: flex; gap: 10px; }
+        button { flex: 1; background: #00e5ff; color: #000; padding: 15px; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; transition: 0.3s; text-transform: uppercase; }
+        button:hover { background: #00b8cc; transform: translateY(-2px); }
+        .prediction-box { margin-top: 30px; padding: 20px; background: #252525; border-radius: 10px; border-left: 5px solid #00e5ff; }
+        .prediction-title { color: #00e5ff; font-size: 20px; margin-bottom: 15px; display: block; border-bottom: 1px solid #444; padding-bottom: 10px; }
+        .number-circle { display: inline-block; width: 50px; height: 50px; line-height: 50px; text-align: center; border-radius: 50%; margin: 5px; font-weight: bold; font-size: 18px; color: white; border: 2px solid #fff; }
+        .red { background-color: #ff4b2b; }
+        .black { background-color: #000000; }
+        .green { background-color: #00c853; }
+        .prob-text { color: #aaa; font-size: 14px; margin-top: 5px; display: block; }
+        .footer { text-align: center; margin-top: 20px; font-size: 12px; color: #666; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>🎯 Roulette Pattern Analyzer (RPA)</h1>
-    <p style="text-align: center; color: #aaa;">Pichle 5 ya usse zyada numbers yahan enter karein (comma separated):</p>
-    <textarea id="numbersInput" placeholder="Eg: 32, 15, 19, 4, 21, 2, 25..."></textarea>
-    <button onclick="analyzePatterns()">Analyze Best Winning Patterns</button>
+    <h1>🚀 RPA PRO - Sequence Matcher</h1>
+    
+    <div class="input-section">
+        <p style="color: #888;">Niche pichle 50-100 spins ka data dalein (History), phir tool agle numbers predict karega:</p>
+        <textarea id="dataInput" placeholder="Eg: 12, 5, 23, 0, 32, 1, 15... (Jitna zyada data, utna sahi prediction)"></textarea>
+    </div>
 
-    <div id="loading" style="text-align:center; margin-top:10px;"></div>
-    <div id="results" class="results"></div>
+    <div class="btn-group">
+        <button onclick="predictNext()">Analyze & Predict Next</button>
+    </div>
+
+    <div id="results" class="prediction-box" style="display: none;">
+        <span class="prediction-title">🎯 Top Predictions for Next Spin:</span>
+        <div id="predictList"></div>
+    </div>
+    
+    <div class="footer">Version 2.5 | Based on Sequence Matching Logic</div>
 </div>
 
 <script>
     const wheelOrder = [0,32,15,19,4,21,2,25,17,34,6,27,13,36,11,30,8,23,10,5,24,16,33,1,20,14,31,9,22,18,29,7,28,12,35,3,26];
     const redNumbers = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36];
 
-    function getNeighbors(num) {
-        let idx = wheelOrder.indexOf(num);
-        let left = wheelOrder[(idx - 1 + 37) % 37];
-        let right = wheelOrder[(idx + 1) % 37];
-        return [left, num, right];
+    function getNumberClass(num) {
+        if (num === 0) return 'green';
+        return redNumbers.includes(num) ? 'red' : 'black';
     }
 
-    function analyzePatterns() {
-        const input = document.getElementById('numbersInput').value;
+    function predictNext() {
+        const input = document.getElementById('dataInput').value;
         const numbers = input.split(/[\s,]+/).map(n => parseInt(n.trim())).filter(n => !isNaN(n));
         
-        if(numbers.length < 5) {
-            alert("Kam se kam 5 numbers dalein!");
+        if(numbers.length < 10) {
+            alert("Kam se kam 10-15 numbers chahiye dhoondne ke liye!");
             return;
         }
 
-        document.getElementById('loading').innerHTML = "Analyzing millions of sequences...";
-        
-        setTimeout(() => {
-            let uniqueNumbers = [...new Set(numbers)];
-            let results = [];
+        // Logic: Aakhri 3-4 numbers ko "Pattern" man-na
+        const patternSize = 3; 
+        let lastPattern = numbers.slice(-patternSize);
+        let matches = {};
 
-            // Har 3-number combination ko test karte hain (Optimized)
-            for (let i = 0; i < uniqueNumbers.length - 2; i++) {
-                for (let j = i + 1; j < uniqueNumbers.length - 1; j++) {
-                    for (let k = j + 1; k < uniqueNumbers.length; k++) {
-                        let combo = [uniqueNumbers[i], uniqueNumbers[j], uniqueNumbers[k]];
-                        let covered = new Set();
-                        combo.forEach(n => getNeighbors(n).forEach(nb => covered.add(nb)));
-
-                        let wins = 0;
-                        numbers.forEach(n => { if(covered.has(n)) wins++; });
-                        
-                        let winRate = (wins / numbers.length) * 100;
-                        results.push({ combo, winRate, totalCovered: covered.size });
-                    }
+        // Poori history mein ye pattern dhoondhna
+        for (let i = 0; i < numbers.length - (patternSize + 1); i++) {
+            let matchFound = true;
+            for (let j = 0; j < patternSize; j++) {
+                if (numbers[i + j] !== lastPattern[j]) {
+                    matchFound = false;
+                    break;
                 }
             }
 
-            results.sort((a, b) => b.winRate - a.winRate);
-            displayResults(results.slice(0, 5), numbers.length);
-        }, 500);
+            if (matchFound) {
+                let nextNum = numbers[i + patternSize];
+                matches[nextNum] = (matches[nextNum] || 0) + 1;
+            }
+        }
+
+        displayResults(matches, numbers.length);
     }
 
-    function displayResults(topPatterns, totalSpins) {
-        let html = `<h3>Top 5 Winning Patterns (Based on ${totalSpins} spins)</h3><table>
-                    <tr><th>Rank</th><th>Pattern Numbers</th><th>Win Rate</th><th>Action</th></tr>`;
-        
-        topPatterns.forEach((p, i) => {
-            let badges = p.combo.map(num => {
-                let color = num === 0 ? 'green' : (redNumbers.includes(num) ? 'red' : 'black');
-                return `<span class="number-badge ${color}">${num}</span>`;
-            }).join("");
+    function displayResults(matches, totalSpins) {
+        const resultsDiv = document.getElementById('results');
+        const predictList = document.getElementById('predictList');
+        resultsDiv.style.display = 'block';
+        predictList.innerHTML = '';
 
-            html += `<tr class="${i === 0 ? 'rank-best' : ''}">
-                        <td>#${i + 1}</td>
-                        <td>${badges}</td>
-                        <td><strong>${p.winRate.toFixed(2)}%</strong></td>
-                        <td><small>Bet on these & Neighbors</small></td>
-                    </tr>`;
+        let sorted = Object.entries(matches).sort((a, b) => b[1] - a[1]);
+
+        if (sorted.length === 0) {
+            predictList.innerHTML = "<p style='color: #ff4b2b;'>Koi match nahi mila. Aur data add karein!</p>";
+            return;
+        }
+
+        sorted.slice(0, 5).forEach(([num, count]) => {
+            let n = parseInt(num);
+            let hitPercent = ((count / totalSpins) * 100).toFixed(1);
+            
+            predictList.innerHTML += `
+                <div style="margin-bottom: 20px; display: inline-block; text-align: center;">
+                    <div class="number-circle ${getNumberClass(n)}">${n}</div>
+                    <span class="prob-text">Hits: ${count}<br>Confidence: ${hitPercent}%</span>
+                </div>
+            `;
         });
-        html += `</table>`;
-        document.getElementById('loading').innerHTML = "";
-        document.getElementById('results').innerHTML = html;
     }
 </script>
+
 </body>
 </html>
