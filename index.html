@@ -1,123 +1,107 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="hi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Roulette Sync & History Pro</title>
+    <title>Advanced Roulette Pattern Analyzer</title>
     <style>
-        body { background: #0b0b0b; color: white; font-family: sans-serif; text-align: center; margin: 0; padding: 10px; }
-        .container { max-width: 450px; margin: auto; }
-        .status-panel { background: #1a1a1a; padding: 15px; border-radius: 12px; margin-bottom: 10px; border: 3px solid #333; }
-        .wheel-box { position: relative; width: 320px; height: 320px; margin: 20px auto; overflow: hidden; border-radius: 50%; }
-        #wheel-svg { width: 100%; height: 100%; transition: transform 6s cubic-bezier(0.1, 0, 0.1, 1); }
-        #ball-track { position: absolute; width: 100%; height: 100%; top: 0; left: 0; transition: transform 6s cubic-bezier(0.1, 0, 0.2, 1); }
-        #ball { position: absolute; width: 12px; height: 12px; background: radial-gradient(circle, #fff, #ccc); border-radius: 50%; top: 35px; left: 50%; transform: translateX(-50%); box-shadow: 0 0 10px white; }
-        .win-box { font-size: 35px; font-weight: bold; margin: 10px 0; padding: 10px 30px; border-radius: 8px; background: #111; border: 2px solid #333; min-width: 80px; display: inline-block; }
-        button { background: #27ae60; color: white; border: none; padding: 18px; font-size: 20px; border-radius: 40px; width: 95%; cursor: pointer; font-weight: bold; }
-        /* History Strip Styling */
-        .history-label { font-size: 12px; color: #888; margin-top: 15px; text-transform: uppercase; letter-spacing: 1px; }
-        .history-bar { display: flex; gap: 6px; justify-content: center; margin-top: 8px; min-height: 40px; }
-        .h-dot { width: 32px; height: 32px; border-radius: 50%; line-height: 32px; font-size: 13px; font-weight: bold; border: 1px solid rgba(255,255,255,0.1); }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #1a1a1a; color: #fff; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; background: #2d2d2d; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        h1 { color: #4db8ff; text-align: center; }
+        textarea { width: 100%; height: 120px; background: #3d3d3d; color: #fff; border: 1px solid #555; border-radius: 8px; padding: 10px; box-sizing: border-box; font-size: 16px; }
+        button { width: 100%; background: #008cba; color: white; padding: 15px; border: none; border-radius: 8px; cursor: pointer; font-size: 18px; margin-top: 15px; transition: 0.3s; }
+        button:hover { background: #005f7a; }
+        .results { margin-top: 30px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; background: #333; }
+        th, td { padding: 12px; text-align: center; border: 1px solid #444; }
+        th { background: #4db8ff; color: #000; }
+        .number-badge { padding: 4px 8px; border-radius: 4px; font-weight: bold; margin: 2px; display: inline-block; }
+        .red { background: #e74c3c; }
+        .black { background: #000; color: #fff; border: 1px solid #555; }
+        .green { background: #27ae60; }
+        .rank-best { background: rgba(39, 174, 96, 0.2); border: 2px solid #27ae60; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div class="status-panel">
-        <div id="bet-result" style="font-size: 22px; font-weight: bold;">WAITING...</div>
-        <div id="prediction-hint" style="color: #3498db; margin-top: 5px;">Analyzing Patterns...</div>
-    </div>
+    <h1>🎯 Roulette Pattern Analyzer (RPA)</h1>
+    <p style="text-align: center; color: #aaa;">Pichle 5 ya usse zyada numbers yahan enter karein (comma separated):</p>
+    <textarea id="numbersInput" placeholder="Eg: 32, 15, 19, 4, 21, 2, 25..."></textarea>
+    <button onclick="analyzePatterns()">Analyze Best Winning Patterns</button>
 
-    <div class="wheel-box">
-        <svg id="wheel-svg" viewBox="0 0 500 500"></svg>
-        <div id="ball-track"><div id="ball"></div></div>
-    </div>
-    
-    <div id="result-num" class="win-box">--</div><br>
-    <button id="spin-btn" onclick="executeSyncSpin()">SPIN & TRACK</button>
-
-    <div class="history-label">Recent 10 History</div>
-    <div class="history-bar" id="history-bar"></div>
+    <div id="loading" style="text-align:center; margin-top:10px;"></div>
+    <div id="results" class="results"></div>
 </div>
 
 <script>
-    const numbers = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26];
-    const reds = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36];
-    let wheelRot = 0, ballRot = 0, history = [], currentPred = null;
+    const wheelOrder = [0,32,15,19,4,21,2,25,17,34,6,27,13,36,11,30,8,23,10,5,24,16,33,1,20,14,31,9,22,18,29,7,28,12,35,3,26];
+    const redNumbers = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36];
 
-    // Draw Wheel Numbers
-    const svg = document.getElementById('wheel-svg');
-    const arc = 360/37;
-    numbers.forEach((n, i) => {
-        const a = i * arc, x1 = 250 + 250*Math.cos(Math.PI*(a-90)/180), y1 = 250 + 250*Math.sin(Math.PI*(a-90)/180);
-        const x2 = 250 + 250*Math.cos(Math.PI*(a+arc-90)/180), y2 = 250 + 250*Math.sin(Math.PI*(a+arc-90)/180);
-        const p = document.createElementNS("http://www.w3.org/2000/svg", "path");
-        p.setAttribute("d", `M 250 250 L ${x1} ${y1} A 250 250 0 0 1 ${x2} ${y2} Z`);
-        p.setAttribute("fill", n===0?"#27ae60":(reds.includes(n)?"#c0392b":"#1a1a1a"));
-        p.setAttribute("stroke", "#333"); svg.appendChild(p);
-        const t = document.createElementNS("http://www.w3.org/2000/svg", "text");
-        const tA = a + arc/2;
-        const tx = 250 + 210 * Math.cos(Math.PI*(tA-90)/180), ty = 250 + 210 * Math.sin(Math.PI*(tA-90)/180);
-        t.setAttribute("x", tx); t.setAttribute("y", ty); t.setAttribute("fill", "white");
-        t.setAttribute("font-size", "14"); t.setAttribute("text-anchor", "middle");
-        t.setAttribute("transform", `rotate(${tA}, ${tx}, ${ty})`); t.textContent = n; svg.appendChild(t);
-    });
-
-    function executeSyncSpin() {
-        const btn = document.getElementById('spin-btn');
-        btn.disabled = true;
-
-        // Simple Prediction Logic
-        currentPred = history.length > 0 && reds.includes(history[0]) ? 'BLACK' : 'RED';
-        document.getElementById('prediction-hint').innerText = "PREDICTION: " + currentPred;
-
-        // Random Rotations
-        const wExtra = 2000 + Math.random() * 2000;
-        const bExtra = 3000 + Math.random() * 2000;
-        wheelRot -= wExtra;
-        ballRot += bExtra;
-
-        document.getElementById('wheel-svg').style.transform = `rotate(${wheelRot}deg)`;
-        document.getElementById('ball-track').style.transform = `rotate(${ballRot}deg)`;
-
-        setTimeout(() => {
-            // Calculation to Sync Ball with Wheel Number
-            const netAngle = (ballRot - wheelRot) % 360;
-            const finalPos = (360 - (netAngle < 0 ? netAngle + 360 : netAngle)) % 360;
-            const winNum = numbers[Math.floor(finalPos / arc)];
-            const col = winNum === 0 ? 'GREEN' : (reds.includes(winNum) ? 'RED' : 'BLACK');
-
-            // Result Display
-            const resText = document.getElementById('bet-result');
-            if (col === currentPred) {
-                resText.innerHTML = "<span style='color:#2ecc71'>PASSED ✅</span>";
-            } else {
-                resText.innerHTML = "<span style='color:#e74c3c'>FAILED ❌</span>";
-            }
-
-            // Update History
-            history.unshift(winNum);
-            if (history.length > 10) history.pop();
-            
-            updateUI(winNum, col);
-            btn.disabled = false;
-        }, 6000);
+    function getNeighbors(num) {
+        let idx = wheelOrder.indexOf(num);
+        let left = wheelOrder[(idx - 1 + 37) % 37];
+        let right = wheelOrder[(idx + 1) % 37];
+        return [left, num, right];
     }
 
-    function updateUI(n, col) {
-        const resBox = document.getElementById('result-num');
-        resBox.innerText = n;
-        resBox.style.background = col === 'RED' ? '#c0392b' : (col === 'GREEN' ? '#27ae60' : '#222');
+    function analyzePatterns() {
+        const input = document.getElementById('numbersInput').value;
+        const numbers = input.split(/[\s,]+/).map(n => parseInt(n.trim())).filter(n => !isNaN(n));
         
-        const log = document.getElementById('history-bar');
-        log.innerHTML = '';
-        history.forEach(v => {
-            const d = document.createElement('div');
-            d.className = 'h-dot';
-            d.style.background = v === 0 ? '#27ae60' : (reds.includes(v) ? '#c0392b' : '#333');
-            d.innerText = v;
-            log.appendChild(d);
+        if(numbers.length < 5) {
+            alert("Kam se kam 5 numbers dalein!");
+            return;
+        }
+
+        document.getElementById('loading').innerHTML = "Analyzing millions of sequences...";
+        
+        setTimeout(() => {
+            let uniqueNumbers = [...new Set(numbers)];
+            let results = [];
+
+            // Har 3-number combination ko test karte hain (Optimized)
+            for (let i = 0; i < uniqueNumbers.length - 2; i++) {
+                for (let j = i + 1; j < uniqueNumbers.length - 1; j++) {
+                    for (let k = j + 1; k < uniqueNumbers.length; k++) {
+                        let combo = [uniqueNumbers[i], uniqueNumbers[j], uniqueNumbers[k]];
+                        let covered = new Set();
+                        combo.forEach(n => getNeighbors(n).forEach(nb => covered.add(nb)));
+
+                        let wins = 0;
+                        numbers.forEach(n => { if(covered.has(n)) wins++; });
+                        
+                        let winRate = (wins / numbers.length) * 100;
+                        results.push({ combo, winRate, totalCovered: covered.size });
+                    }
+                }
+            }
+
+            results.sort((a, b) => b.winRate - a.winRate);
+            displayResults(results.slice(0, 5), numbers.length);
+        }, 500);
+    }
+
+    function displayResults(topPatterns, totalSpins) {
+        let html = `<h3>Top 5 Winning Patterns (Based on ${totalSpins} spins)</h3><table>
+                    <tr><th>Rank</th><th>Pattern Numbers</th><th>Win Rate</th><th>Action</th></tr>`;
+        
+        topPatterns.forEach((p, i) => {
+            let badges = p.combo.map(num => {
+                let color = num === 0 ? 'green' : (redNumbers.includes(num) ? 'red' : 'black');
+                return `<span class="number-badge ${color}">${num}</span>`;
+            }).join("");
+
+            html += `<tr class="${i === 0 ? 'rank-best' : ''}">
+                        <td>#${i + 1}</td>
+                        <td>${badges}</td>
+                        <td><strong>${p.winRate.toFixed(2)}%</strong></td>
+                        <td><small>Bet on these & Neighbors</small></td>
+                    </tr>`;
         });
+        html += `</table>`;
+        document.getElementById('loading').innerHTML = "";
+        document.getElementById('results').innerHTML = html;
     }
 </script>
 </body>
